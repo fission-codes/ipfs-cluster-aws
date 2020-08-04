@@ -1,0 +1,7 @@
+result
+.terraform*
+terraform*
+*.tfvars
+.envrc
+SECRET*
+out_*
