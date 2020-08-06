@@ -18,7 +18,7 @@ export AWS_DEFAULT_REGION="us-west-2"
 Start the deployment:
 
 ```
-TODO nix-shell --run 'terraform apply'
+nix-shell --run 'terraform apply'
 ```
 
 Terraform will ask you for an environment name (eg. your handle). You can [save variables](https://learn.hashicorp.com/terraform/getting-started/variables.html#assigning-variables) eg. in a file named `terraform.tfvars`. Read the plan and accept it if you are satisfied. When the deployment is done, read the outputs.
@@ -26,13 +26,13 @@ Terraform will ask you for an environment name (eg. your handle). You can [save 
 Connect to a server and run some commands:
 
 ```
-TODO ssh root@$(cat out_node_ip_0) -i <(terraform output private_key) 'journalctl -f -n 200'
+ssh root@$(cat out_node_ip_0) -i SECRET_private_key 'journalctl -f -n 200'
 ```
 
 When you're done, don't forget to destroy the cloud resources so as not to waste power and money:
 
 ```
-TODO nix-shell --run 'terraform destroy'
+nix-shell --run 'terraform destroy'
 ```
 
 
@@ -41,8 +41,15 @@ TODO nix-shell --run 'terraform destroy'
 - deployment environment
   - [`shell.nix`](shell.nix) is loaded by `nix-shell` and includes dependencies and scripts used for infrastructure deployment
 - infrastructure
-  - TODO [`variables.tf`](variables.tf) defines inputs to the infrastructure that you can configure
-  - TODO [`main.tf`](main.tf) defines the AWS cloud resources (vpc, sg, acl, ec2, ebs, r53, etc.) deployed via Terraform, ie. a bunch of cloud servers running NixOS
+  - [`variables.tf`](variables.tf) defines inputs to the infrastructure that you can configure
+  - [`main.tf`](main.tf) defines the AWS cloud resources (vpc, sg, acl, ec2, ebs, r53, etc.) deployed via Terraform, ie. a bunch of cloud servers running NixOS
 - operating sysem configuration
   - TODO [`ipfs-cluster-node.nix`](ipfs-cluster-node.nix`) is a NixOS profile for running an `ipfs-cluster` node with all required services and configuration
   - TODO [`ipfs-cluster.nix`](ipfs-cluster.nix) is a NixOS module for running the `ipfs-cluster` service
+
+
+### Security
+
+The Terraform state `terraform.tfstate` contains [sensitive data](https://www.terraform.io/docs/state/sensitive-data.html) and should be [stored remotely](https://www.terraform.io/docs/state/remote.html) or encrypted.
+
+If you don't specify a `public_key` variable, a private key without a passphrase is generated and saved to `SECRET_private_key`. For production use, generate a key with passphrase (stored in your keychain), specify this variable and let ssh find the private key, eg. via `.ssh/config`.
