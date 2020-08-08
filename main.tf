@@ -2,10 +2,7 @@
 
 provider "aws" {}
 
-#
-# Local Variables
-#
-
+# Local variables
 locals {
   name                 = "ipfs-cluster-${local.env}"
   iam_username         = element(reverse(split("/", data.aws_caller_identity.current.arn)), 0)
@@ -23,9 +20,11 @@ locals {
 }
 
 #
-# Data Sources
+# Data sources
 #
 
+
+# Get the account details of the currently authenticated AMI user .
 data "aws_caller_identity" "current" {}
 
 data "aws_vpc" "default" {
@@ -36,6 +35,7 @@ data "aws_subnet_ids" "all" {
   vpc_id = data.aws_vpc.default.id
 }
 
+# Look up NixOS machine image.
 module "ami" {
   source  = "git::https://github.com/tweag/terraform-nixos//aws_image_nixos?ref=fa6ba97b51873817b279840dcb619725ea9793ac"
   release = "20.03"
@@ -60,12 +60,12 @@ resource "aws_key_pair" "this" {
 # Firewall
 resource "aws_security_group" "this" {
   name        = local.name
-  description = "Allow inbound ssh"
+  description = "Allow inbound SSH and all outbound traffic"
   vpc_id      = data.aws_vpc.default.id
   tags        = local.tags
 
   ingress {
-    description = "ssh from all"
+    description = "Allow inbound SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -73,6 +73,7 @@ resource "aws_security_group" "this" {
   }
 
   egress {
+    description = "Allow all outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -93,7 +94,7 @@ resource "aws_instance" "this" {
   depends_on = [aws_key_pair.this]
 
   root_block_device {
-    volume_size = "32"
+    volume_size = var.volume_size
   }
 
   connection {
@@ -109,10 +110,30 @@ resource "aws_instance" "this" {
 }
 
 #
+# Deploy NixOS
+#
+
+resource "null_resource" "deploy-nixos" {
+  count = var.node_count
+
+  triggers = {
+    instance = aws_instance.this[count.index].id
+    always   = uuid()
+  }
+
+  depends_on = [local_file.private_key, local_file.configuration, local_file.node_ip]
+
+  provisioner "local-exec" {
+    command = "deploy-nixos root@${aws_instance.this[count.index].public_ip} --config out_node${count.index}_configuration.nix"
+  }
+}
+
+
+#
 # Output Files
 #
 
-# Save the generated private key to a file. Development only. In production, set public_key.
+# Save the generated private key to a file, for development only. In production, set public_key.
 resource "local_file" "private_key" {
   count             = local.generate_private_key ? 1 : 0
   filename          = "SECRET_private_key"
@@ -120,11 +141,25 @@ resource "local_file" "private_key" {
   file_permission   = "0600"
 }
 
+# Save node IPs in files for easy access
 resource "local_file" "node_ip" {
   count    = var.node_count
-  filename = "out_node_ip_${count.index}"
+  filename = "out_node${count.index}_ip"
   content  = aws_instance.this[count.index].public_ip
 }
+
+# Generate NixOS configuration file for each node.
+resource "local_file" "configuration" {
+  count    = var.node_count
+  filename = "out_node${count.index}_configuration.nix"
+  content  = <<-EOT
+    {
+      imports = [ ./ipfs-cluster-aws.nix ];
+      networking.hostName = "${local.name}-${count.index}";
+    }
+  EOT
+}
+
 
 #
 # Outputs

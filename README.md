@@ -26,7 +26,7 @@ Terraform will ask you for an environment name (eg. your handle). You can [save 
 Connect to a server and run some commands:
 
 ```
-ssh root@$(cat out_node_ip_0) -i SECRET_private_key 'journalctl -f -n 200'
+ssh root@$(cat out_node0_ip) -i SECRET_private_key 'journalctl -f -n 200'
 ```
 
 When you're done, don't forget to destroy the cloud resources so as not to waste power and money:
@@ -44,8 +44,8 @@ nix-shell --run 'terraform destroy'
   - [`variables.tf`](variables.tf) defines inputs to the infrastructure that you can configure
   - [`main.tf`](main.tf) defines the AWS cloud resources (vpc, sg, acl, ec2, ebs, r53, etc.) deployed via Terraform, ie. a bunch of cloud servers running NixOS
 - operating sysem configuration
-  - TODO [`ipfs-cluster-node.nix`](ipfs-cluster-node.nix`) is a NixOS profile for running an `ipfs-cluster` node with all required services and configuration
-  - TODO [`ipfs-cluster.nix`](ipfs-cluster.nix) is a NixOS module for running the `ipfs-cluster` service
+  - [`ipfs-cluster-node.nix`](ipfs-cluster-node.nix`) is a NixOS profile for running an `ipfs-cluster` node on AWS EC2 with required services and configuration
+  - TODO [`ipfs-cluster.nix`](ipfs-cluster.nix) is a NixOS module for configuring and running the `ipfs-cluster` service
 
 
 ### Security

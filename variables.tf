@@ -29,3 +29,9 @@ variable "public_key" {
   type        = string
   default     = null
 }
+
+variable "volume_size" {
+  description = "Size of root volumes in GB."
+  type        = number
+  default     = 20
+}
