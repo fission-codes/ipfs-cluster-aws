@@ -4,4 +4,4 @@ terraform*
 *.tfvars
 .envrc
 SECRET*
-out_*
+out

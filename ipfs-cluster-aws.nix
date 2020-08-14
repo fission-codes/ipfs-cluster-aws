@@ -9,7 +9,14 @@
 
   system.autoUpgrade.enable = true;
 
+  networking.firewall.allowedTCPPorts = [ 9096 ];
+
   services.openssh.enable = true;
 
   services.ipfs.enable = true;
+
+  services.ipfs-cluster = {
+    enable = true;
+    identityFile = "/root/SECRET_identity.json";
+  };
 }

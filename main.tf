@@ -41,9 +41,37 @@ module "ami" {
   release = "20.03"
 }
 
+data "local_file" "node_id" {
+  count = var.node_count
+  # wait until file is created
+  filename = "out/node${count.index}/ipfs-cluster-id${replace(null_resource.node_identity[count.index].id, "/.*/", "")}"
+}
+
+data "local_file" "node_private_key" {
+  count = var.node_count
+  # wait until file is created
+  filename = "SECRET/node${count.index}/ipfs-cluster-private_key${replace(null_resource.node_identity[count.index].id, "/.*/", "")}"
+}
+
 #
 # Resources
 #
+
+resource "random_id" "cluster_secret" {
+  byte_length = 32
+}
+
+resource "null_resource" "node_identity" {
+  count = var.node_count
+  provisioner "local-exec" {
+    command = <<-EOT
+      true && \
+        mkdir -p out/node${count.index} && \
+        mkdir -p SECRET/node${count.index} && \
+        ipfs-key -type ed25519 -f -pidout out/node${count.index}/ipfs-cluster-id -prvout SECRET/node${count.index}/ipfs-cluster-private_key
+    EOT
+  }
+}
 
 # Generate a key pair if public_key is not provided.
 resource "tls_private_key" "this" {
@@ -60,7 +88,6 @@ resource "aws_key_pair" "this" {
 # Firewall
 resource "aws_security_group" "this" {
   name        = local.name
-  description = "Allow inbound SSH and all outbound traffic"
   vpc_id      = data.aws_vpc.default.id
   tags        = local.tags
 
@@ -68,6 +95,22 @@ resource "aws_security_group" "this" {
     description = "Allow inbound SSH"
     from_port   = 22
     to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow inbound IPFS swarm"
+    from_port   = 4001
+    to_port     = 4001
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow inbound ipfs-cluster swarm"
+    from_port   = 9096
+    to_port     = 9096
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -91,15 +134,31 @@ resource "aws_instance" "this" {
   key_name                    = aws_key_pair.this.key_name
   tags                        = local.tags
 
-  depends_on = [aws_key_pair.this]
+  depends_on = [aws_key_pair.this, aws_security_group.this]
 
   root_block_device {
     volume_size = var.volume_size
   }
 
+}
+
+#
+# Deploy
+#
+
+# Copy secrets to servers
+resource "null_resource" "deploy_secrets" {
+  count = var.node_count
+
+  triggers = {
+    instance = aws_instance.this[count.index].id
+    cluster_secret = random_id.cluster_secret.hex
+  }
+
+  depends_on = [local_file.private_key, local_file.configuration, local_file.node_ip ]
+
   connection {
-    user        = "root"
-    host        = self.public_ip
+    host        = aws_instance.this[count.index].public_ip
     private_key = local.generate_private_key ? tls_private_key.this[0].private_key_pem : null
   }
 
@@ -107,27 +166,36 @@ resource "aws_instance" "this" {
   provisioner "remote-exec" {
     inline = ["echo 'Hello, World!'"]
   }
+
+  provisioner "file" {
+    content     = "CLUSTER_SECRET=${random_id.cluster_secret.hex}"
+    destination = "/root/SECRET_ipfs-cluster"
+  }
+
+  provisioner "file" {
+    content     = jsonencode({"id"=data.local_file.node_id[count.index].content, "private_key"=data.local_file.node_private_key[count.index].content})
+    destination = "/root/SECRET_identity.json"
+  }
+
+  provisioner "remote-exec" {
+    inline = ["systemctl restart ipfs-cluster-init || echo 'Restarting ipfs-cluster failed.'"]
+  }
 }
 
-#
 # Deploy NixOS
-#
-
-resource "null_resource" "deploy-nixos" {
+resource "null_resource" "deploy_nixos" {
   count = var.node_count
 
   triggers = {
-    instance = aws_instance.this[count.index].id
     always   = uuid()
   }
 
-  depends_on = [local_file.private_key, local_file.configuration, local_file.node_ip]
+  depends_on = [null_resource.deploy_secrets]
 
   provisioner "local-exec" {
-    command = "deploy-nixos root@${aws_instance.this[count.index].public_ip} --config out_node${count.index}_configuration.nix"
+    command = "deploy-nixos root@${aws_instance.this[count.index].public_ip} --config out/node${count.index}/configuration.nix"
   }
 }
-
 
 #
 # Output Files
@@ -136,7 +204,7 @@ resource "null_resource" "deploy-nixos" {
 # Save the generated private key to a file, for development only. In production, set public_key.
 resource "local_file" "private_key" {
   count             = local.generate_private_key ? 1 : 0
-  filename          = "SECRET_private_key"
+  filename          = "SECRET/private_key"
   sensitive_content = tls_private_key.this[0].private_key_pem
   file_permission   = "0600"
 }
@@ -144,18 +212,27 @@ resource "local_file" "private_key" {
 # Save node IPs in files for easy access
 resource "local_file" "node_ip" {
   count    = var.node_count
-  filename = "out_node${count.index}_ip"
+  filename = "out/node${count.index}/ip"
   content  = aws_instance.this[count.index].public_ip
 }
 
 # Generate NixOS configuration file for each node.
 resource "local_file" "configuration" {
   count    = var.node_count
-  filename = "out_node${count.index}_configuration.nix"
+  filename = "out/node${count.index}/configuration.nix"
+  file_permission   = "0666"
   content  = <<-EOT
     {
       imports = [ ./ipfs-cluster-aws.nix ];
+
       networking.hostName = "${local.name}-${count.index}";
+
+      services.ipfs-cluster.bootstrapPeers = [
+        ${join(" ", [for i in range(var.node_count): "\"/ip4/${aws_instance.this[i].public_ip}/tcp/9096/ipfs/${data.local_file.node_id[i].content}\"" if i != count.index])}
+      ];
+
+      systemd.services.ipfs-cluster-init.serviceConfig.EnvironmentFile = "/root/SECRET_ipfs-cluster";
+      systemd.services.ipfs-cluster.serviceConfig.EnvironmentFile = "/root/SECRET_ipfs-cluster";
     }
   EOT
 }
