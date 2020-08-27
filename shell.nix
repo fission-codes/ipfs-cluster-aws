@@ -4,8 +4,10 @@ let
   commands = {
     inherit (pkgs) niv;
 
-    terraform = pkgs.terraform_0_12.withPlugins
-      (p: with p; [ aws local p.null random template tls ]);
+    # terraform = pkgs.terraform_0_12.withPlugins
+    #   (p: with p; [ aws local p.null random template tls ]);
+
+    terraform = pkgs.terraform_0_13;
 
     validate = pkgs.writeTurtleBin "validate" ''
       main = do

@@ -39,8 +39,8 @@ nix-shell --run 'terraform destroy'
 ### What? Where?
 
 - infrastructure
-  - [`variables.tf`](variables.tf) defines inputs to the infrastructure that you can configure
-  - [`main.tf`](main.tf) defines the AWS cloud resources (vpc, sg, acl, ec2, ebs, r53, etc.) deployed via Terraform, ie. a bunch of cloud servers running NixOS
+  - [`main.tf`](main.tf) defines global resources and per-region modules deployed via Terraform
+  - [`ipfs-cluster-aws-region/main.tf`] defines per-region AWS cloud resources (vpc, sg, acl, ec2, ebs, r53, etc.), ie. a network of cloud servers running NixOS
 - operating sysem configuration
   - [`ipfs-cluster-aws.nix`](ipfs-cluster-aws.nix) is a NixOS profile for running an `ipfs-cluster` node on AWS EC2 with required services and configuration
   - [`ipfs-cluster.nix`](ipfs-cluster.nix) is a NixOS module for configuring and running the `ipfs-cluster` service

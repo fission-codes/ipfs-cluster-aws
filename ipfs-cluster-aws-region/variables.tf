@@ -3,7 +3,6 @@
 variable "env" {
   description = "Name for the infrastructure environment. It will appear in AWS resource names, tags, and domain names. Set to your username for development (or 'staging', 'production' for permanent deployments). Leave empty to use the AWS key's IAM users's alias."
   type        = string
-  default     = null
 }
 
 variable "maintainer" {
@@ -12,10 +11,28 @@ variable "maintainer" {
   default     = null
 }
 
-variable "region_node_counts" {
-  description = "Map from AWS regions to number of ipfs-cluster nodes."
-  default     = { "us-east-1" = 3, "eu-north-1" = 2 }
-  type        = map(number)
+variable "region" {
+  description = "AWS region to create the resources in."
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "name" {
+  description = "Name to use for resources."
+  type        = string
+  default     = null
+}
+
+variable "node_count" {
+  description = "Number of ipfs-cluster EC2 instances to provision."
+  default     = 3
+  type        = number
+}
+
+variable "node_names" {
+  description = "Node names. Optional."
+  default     = null
+  type        = list(string)
 }
 
 variable "instance_type" {
@@ -27,11 +44,10 @@ variable "instance_type" {
 variable "public_key" {
   description = "This SSH public key will be granted root access on the nodes. If not set, will generate a private key file and save it to `SECRET_private_key`."
   type        = string
-  default     = null
 }
 
 variable "volume_size" {
   description = "Size of root volumes in GB."
   type        = number
-  default     = 50
+  default     = 20
 }
