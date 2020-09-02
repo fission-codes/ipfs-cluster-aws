@@ -7,7 +7,8 @@ locals {
   iam_username         = element(reverse(split("/", data.aws_caller_identity.current.arn)), 0)
   generate_private_key = var.public_key == null
   public_key           = local.generate_private_key ? tls_private_key.this[0].public_key_openssh : var.public_key
-  node_ips             = concat(module.ipfs-cluster-aws-region-1.node_ips, module.ipfs-cluster-aws-region-1.node_ips)
+  node_ips             = concat(module.ipfs-cluster-aws-region-1.node_ips, module.ipfs-cluster-aws-region-2.node_ips)
+  bucket_names         = concat(module.ipfs-cluster-aws-region-1.bucket_names, module.ipfs-cluster-aws-region-2.bucket_names)
 }
 
 #
@@ -105,9 +106,32 @@ resource "local_file" "configuration" {
 
       networking.hostName = "${local.env}-ipfs-cluster-node${count.index}";
 
+      # TODO: ipfs s3 ds config
+      # services.ipfs.extraConfig = {
+      #   Datastore: {
+      #     Spec = {
+      #       mounts = [
+      #         {
+      #           child = {
+      #             type = "s3ds";
+      #             region = "us-east-1";
+      #             bucket = "${local.bucket_names[count.index]}";
+      #             rootDirectory = "ipfs-cluster";
+      #           };
+      #           mountpoint: "/blocks",
+      #           prefix: "s3.datastore",
+      #           type: "measure"
+      #         };
+      #       ];
+      #     };
+      #   };
+      # ];
+
       services.ipfs-cluster.bootstrapPeers = [
         ${join(" ", [for i in range(local.node_count) : "\"/ip4/${local.node_ips[i]}/tcp/9096/ipfs/${data.local_file.node_id[i].content}\"" if i != count.index])}
       ];
+
+      services.ipfs-cluster.bucket_name = "${local.bucket_names[count.index]}";
 
       systemd.services.ipfs-cluster-init.serviceConfig.EnvironmentFile = "/root/SECRET_ipfs-cluster";
       systemd.services.ipfs-cluster.serviceConfig.EnvironmentFile = "/root/SECRET_ipfs-cluster";

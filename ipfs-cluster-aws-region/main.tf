@@ -21,6 +21,8 @@ locals {
 # Data sources
 #
 
+data "aws_region" "current" {}
+
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -34,6 +36,12 @@ module "ami" {
 #
 # Resources
 #
+
+resource "aws_s3_bucket" "this" {
+  bucket_prefix = "${local.name}-${data.aws_region.current.name}"
+  acl           = "private"
+  tags          = merge(local.tags, { Name = data.aws_region.current.name })
+}
 
 resource "aws_vpc" "this" {
   cidr_block = "10.0.0.0/16"
@@ -126,6 +134,7 @@ resource "aws_instance" "this" {
   depends_on                  = [aws_route_table_association.this, aws_security_group.this]
   associate_public_ip_address = true
   key_name                    = aws_key_pair.this.key_name
+  iam_instance_profile        = aws_iam_instance_profile.this.name
   tags                        = merge(local.tags, { Name = local.node_names[count.index] })
 
   root_block_device {
@@ -137,10 +146,73 @@ resource "aws_instance" "this" {
   }
 }
 
+resource "aws_iam_instance_profile" "this" {
+  name = "${local.name}-${data.aws_region.current.name}"
+  role = aws_iam_role.this.name
+}
+
+resource "aws_iam_role" "this" {
+  name = "${local.name}-${data.aws_region.current.name}"
+  tags = local.tags
+
+  assume_role_policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": "sts:AssumeRole",
+            "Principal": {
+               "Service": "ec2.amazonaws.com"
+            },
+            "Effect": "Allow",
+            "Sid": ""
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy" "this" {
+  name   = "this"
+  role   = aws_iam_role.this.id
+  policy = <<-EOT
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:ListBucket"
+        ],
+      "Resource": [
+          "arn:aws:s3:::${aws_s3_bucket.this.id}"
+        ]
+      },
+      {
+        "Effect": "Allow",
+        "Action": [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:PutObjectAcl"
+        ],
+        "Resource": [
+          "arn:aws:s3:::${aws_s3_bucket.this.id}/*"
+        ]
+      }
+    ]
+  }
+  EOT
+}
+
 #
 # Outputs
 #
 
 output "node_ips" {
   value = aws_instance.this.*.public_ip
+}
+
+output "bucket_names" {
+  value = [for x in range(var.node_count) : aws_s3_bucket.this.id]
 }
