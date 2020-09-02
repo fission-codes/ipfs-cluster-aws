@@ -9,7 +9,7 @@
 
   system.autoUpgrade.enable = true;
 
-  networking.firewall.allowedTCPPorts = [ 9096 ];
+  networking.firewall.allowedTCPPorts = [ 4002 8080 9096 ];
 
   services.openssh.enable = true;
 

@@ -103,6 +103,22 @@ resource "aws_security_group" "this" {
   }
 
   ingress {
+    description = "Allow inbound IPFS websocket"
+    from_port   = 4002
+    to_port     = 4002
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow inbound IPFS HTTP"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
     description = "Allow inbound ipfs-cluster swarm"
     from_port   = 9096
     to_port     = 9096
