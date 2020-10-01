@@ -1,4 +1,16 @@
 {
+    "ipfs": {
+        "branch": "with-s3",
+        "description": "IPFS implementation in Go",
+        "homepage": "https://ipfs.io",
+        "owner": "brainrape",
+        "repo": "go-ipfs",
+        "rev": "391e29d7f6f64300055d88c9385222f7619525ed",
+        "sha256": "066a0wcjvfg9m2a3kz4kz1vbr1xnr812fq57417d7hcjp5ca2x83",
+        "type": "tarball",
+        "url": "https://github.com/brainrape/go-ipfs/archive/391e29d7f6f64300055d88c9385222f7619525ed.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "ipfs-key": {
         "branch": "master",
         "description": "A program to generate ipfs private keys",
@@ -17,10 +29,10 @@
         "homepage": "https://github.com/nmattia/niv",
         "owner": "nmattia",
         "repo": "niv",
-        "rev": "89ae775e9dfc2571f912156dd2f8627e14d4d507",
-        "sha256": "0ssw6byyn79fpyzswi28s5b85x66xh4xsfhmcfl5mkdxxpmyy0ns",
+        "rev": "29ddaaf4e099c3ac0647f5b652469dfc79cd3b53",
+        "sha256": "1va6myp07gkspgxfch8z3rs9nyvys6jmgzkys6a2c4j09qxp1bs0",
         "type": "tarball",
-        "url": "https://github.com/nmattia/niv/archive/89ae775e9dfc2571f912156dd2f8627e14d4d507.tar.gz",
+        "url": "https://github.com/nmattia/niv/archive/29ddaaf4e099c3ac0647f5b652469dfc79cd3b53.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs": {
@@ -29,10 +41,10 @@
         "homepage": "https://github.com/NixOS/nixpkgs",
         "owner": "NixOS",
         "repo": "nixpkgs-channels",
-        "rev": "c59ea8b8a0e7f927e7291c14ea6cd1bd3a16ff38",
-        "sha256": "1ak7jqx94fjhc68xh1lh35kh3w3ndbadprrb762qgvcfb8351x8v",
+        "rev": "5aba0fe9766a7201a336249fd6cb76e0d7ba2faf",
+        "sha256": "05gawlhizp85agdpw3kpjn41vggdiywbabsbmk76r2dr513188jz",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs-channels/archive/c59ea8b8a0e7f927e7291c14ea6cd1bd3a16ff38.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs-channels/archive/5aba0fe9766a7201a336249fd6cb76e0d7ba2faf.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

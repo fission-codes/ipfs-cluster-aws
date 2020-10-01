@@ -171,21 +171,21 @@ resource "aws_iam_role" "this" {
   name = "${local.name}-${data.aws_region.current.name}"
   tags = local.tags
 
-  assume_role_policy = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
+  assume_role_policy = <<-EOT
+    {
+      "Version": "2012-10-17",
+      "Statement": [
         {
-            "Action": "sts:AssumeRole",
-            "Principal": {
-               "Service": "ec2.amazonaws.com"
-            },
-            "Effect": "Allow",
-            "Sid": ""
+          "Action": "sts:AssumeRole",
+          "Principal": {
+            "Service": "ec2.amazonaws.com"
+          },
+          "Effect": "Allow",
+          "Sid": ""
         }
-    ]
-}
-EOF
+      ]
+    }
+  EOT
 }
 
 resource "aws_iam_role_policy" "this" {
@@ -195,29 +195,29 @@ resource "aws_iam_role_policy" "this" {
   {
     "Version": "2012-10-17",
     "Statement": [
-      {
-        "Effect": "Allow",
-        "Action": [
-          "s3:ListBucket"
-        ],
-      "Resource": [
-          "arn:aws:s3:::${aws_s3_bucket.this.id}"
-        ]
-      },
-      {
-        "Effect": "Allow",
-        "Action": [
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:DeleteObject",
-          "s3:PutObjectAcl"
-        ],
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:ListBucket"
+          ],
         "Resource": [
-          "arn:aws:s3:::${aws_s3_bucket.this.id}/*"
-        ]
-      }
-    ]
-  }
+            "arn:aws:s3:::${aws_s3_bucket.this.id}"
+          ]
+        },
+        {
+          "Effect": "Allow",
+          "Action": [
+            "s3:PutObject",
+            "s3:GetObject",
+            "s3:DeleteObject",
+            "s3:PutObjectAcl"
+          ],
+          "Resource": [
+            "arn:aws:s3:::${aws_s3_bucket.this.id}/*"
+          ]
+        }
+      ]
+    }
   EOT
 }
 

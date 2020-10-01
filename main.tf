@@ -3,6 +3,7 @@ locals {
   maintainer           = var.maintainer != null ? var.maintainer : var.env
   name                 = "${local.env}-ipfs-cluster"
   node_count           = sum(values(var.region_node_counts))
+  region_names         = [for r, c in var.region_node_counts : r]
   region_node_names    = { for r, c in var.region_node_counts : r => [for i in range(c) : "ipfs-cluster-${local.env}-${r}-node-${i}"] }
   iam_username         = element(reverse(split("/", data.aws_caller_identity.current.arn)), 0)
   generate_private_key = var.public_key == null
@@ -66,13 +67,13 @@ module "ipfs-cluster-aws-region-1" {
   env           = local.env
   maintainer    = local.maintainer
   name          = local.name
-  node_count    = var.region_node_counts["us-east-1"]
-  node_names    = local.region_node_names["us-east-1"]
+  node_count    = var.region_node_counts["eu-north-1"]
+  node_names    = local.region_node_names["eu-north-1"]
   instance_type = var.instance_type
   public_key    = local.public_key
   volume_size   = var.volume_size
   providers = {
-    aws = aws.us-east-1
+    aws = aws.eu-north-1
   }
 }
 
@@ -81,13 +82,13 @@ module "ipfs-cluster-aws-region-2" {
   env           = local.env
   name          = local.name
   maintainer    = local.maintainer
-  node_count    = var.region_node_counts["eu-north-1"]
-  node_names    = local.region_node_names["eu-north-1"]
+  node_count    = var.region_node_counts["us-east-1"]
+  node_names    = local.region_node_names["us-east-1"]
   instance_type = var.instance_type
   public_key    = local.public_key
   volume_size   = var.volume_size
   providers = {
-    aws = aws.eu-north-1
+    aws = aws.us-east-1
   }
 }
 
@@ -106,35 +107,15 @@ resource "local_file" "configuration" {
 
       networking.hostName = "${local.env}-ipfs-cluster-node${count.index}";
 
-      # TODO: ipfs s3 ds config
-      # services.ipfs.extraConfig = {
-      #   Datastore: {
-      #     Spec = {
-      #       mounts = [
-      #         {
-      #           child = {
-      #             type = "s3ds";
-      #             region = "us-east-1";
-      #             bucket = "${local.bucket_names[count.index]}";
-      #             rootDirectory = "ipfs-cluster";
-      #           };
-      #           mountpoint: "/blocks",
-      #           prefix: "s3.datastore",
-      #           type: "measure"
-      #         };
-      #       ];
-      #     };
-      #   };
-      # ];
-
       services.ipfs-cluster.bootstrapPeers = [
         ${join(" ", [for i in range(local.node_count) : "\"/ip4/${local.node_ips[i]}/tcp/9096/ipfs/${data.local_file.node_id[i].content}\"" if i != count.index])}
       ];
 
-      services.ipfs-cluster.bucket_name = "${local.bucket_names[count.index]}";
-
-      systemd.services.ipfs-cluster-init.serviceConfig.EnvironmentFile = "/root/SECRET_ipfs-cluster";
-      systemd.services.ipfs-cluster.serviceConfig.EnvironmentFile = "/root/SECRET_ipfs-cluster";
+      services.ipfs-cluster-aws = {
+        enable = true;
+        region = "${local.region_names[count.index]}";
+        bucket = "${local.bucket_names[count.index]}";
+      };
     }
   EOT
 }
@@ -200,4 +181,14 @@ resource "local_file" "private_key" {
   filename          = "SECRET/private_key"
   sensitive_content = tls_private_key.this[0].private_key_pem
   file_permission   = "0600"
+}
+
+resource "local_file" "ip" {
+  count             = local.node_count
+  filename          = "out/node${count.index}/ip"
+  sensitive_content = local.node_ips[count.index]
+}
+
+output "node_ips" {
+  value = local.node_ips
 }

@@ -14,7 +14,7 @@ variable "maintainer" {
 
 variable "region_node_counts" {
   description = "Map from AWS regions to number of ipfs-cluster nodes."
-  default     = { "us-east-1" = 3, "eu-north-1" = 2 }
+  default     = { "eu-north-1" = 1, "us-east-1" = 1 }
   type        = map(number)
 }
 

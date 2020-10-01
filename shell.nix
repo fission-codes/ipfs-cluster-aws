@@ -35,11 +35,11 @@ let
           rsync [source] (destination <> ":" <> "/etc/nixos/configuration.nix")
         ssh destination deployCommand
 
-      sources = [ "ipfs-cluster-aws.nix", "ipfs-cluster.nix" ]
+      sources = [ "ipfs-cluster-aws.nix", "ipfs-cluster.nix", "nix" ]
 
       deployCommand = intercalate " && "
         [ "nixos-rebuild build --show-trace > /dev/null"
-        , "nixos-rebuild switch --show-trace"
+        , "nixos-rebuild switch --show-trace -j 1"
         ]
     '';
   };

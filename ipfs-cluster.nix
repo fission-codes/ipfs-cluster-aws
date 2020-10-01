@@ -7,46 +7,43 @@ let
   cfg = config.services.ipfs-cluster;
 in
 {
-  options = with types; {
+  options.services.ipfs-cluster = with types; {
+    enable = mkEnableOption "Pinset orchestration for IPFS.";
 
-    services.ipfs-cluster = {
-      enable = mkEnableOption "Pinset orchestration for IPFS.";
+    user = mkOption {
+      type = str;
+      default = "ipfs-cluster";
+      description = "User under which the ipfs-cluster daemon runs.";
+    };
 
-      user = mkOption {
-        type = str;
-        default = "ipfs-cluster";
-        description = "User under which the ipfs-cluster daemon runs.";
-      };
+    group = mkOption {
+      type = str;
+      default = "ipfs-cluster";
+      description = "Group under which the ipfs-cluster daemon runs.";
+    };
 
-      group = mkOption {
-        type = str;
-        default = "ipfs-cluster";
-        description = "Group under which the ipfs-cluster daemon runs.";
-      };
+    dataDir = mkOption {
+      type = path;
+      default = "/var/lib/ipfs-cluster";
+      description = "The data directory for ipfs-cluster.";
+    };
 
-      dataDir = mkOption {
-        type = path;
-        default = "/var/lib/ipfs-cluster";
-        description = "The data directory for ipfs-cluster.";
-      };
+    identityFile = mkOption {
+      type = nullOr path;
+      default = null;
+      description = "The path of an `identity.json` file containing the node id and private key. If provided, it will be copied to dataDir, unless one is already there.";
+    };
 
-      identityFile = mkOption {
-        type = nullOr path;
-        default = null;
-        description = "The path of an `identity.json` file containing the node id and private key. If provided, it will be copied to dataDir, unless one is already there.";
-      };
+    extraEnv = mkOption {
+      type = attrsOf str;
+      default = {};
+      description = "Extra environment variables to pass to ipfs-cluster-service.";
+    };
 
-      extraEnv = mkOption {
-        type = attrsOf str;
-        default = {};
-        description = "Extra environment variables to pass to ipfs-cluster-service.";
-      };
-
-      bootstrapPeers = mkOption {
-        type = listOf str;
-        default = [];
-        description = "List of trusted peer multiadresses to use for bootstrapping the cluster.";
-      };
+    bootstrapPeers = mkOption {
+      type = listOf str;
+      default = [];
+      description = "List of trusted peer multiadresses to use for bootstrapping the cluster.";
     };
   };
 
@@ -58,6 +55,7 @@ in
     users.users = mkIf (cfg.user == "ipfs-cluster") {
       ipfs-cluster = {
         description = "ipfs-cluster daemon user";
+        # add a uid/gid to nixos/modules/misc/ids.nix or use DynamicUser
         # uid = config.ids.uids.ipfs-cluster;
         group = cfg.group;
         home = cfg.dataDir;
@@ -67,6 +65,7 @@ in
 
     users.groups = mkIf (cfg.group == "ipfs-cluster") {
       ipfs-cluster = {
+        # add a uid/gid to nixos/modules/misc/ids.nix or use DynamicUser
         # gid = config.ids.gids.ipfs-cluster;
       };
     };
