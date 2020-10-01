@@ -95,7 +95,7 @@ resource "aws_security_group" "this" {
   }
 
   ingress {
-    description = "Allow inbound IPFS swarm"
+    description = "Allow inbound IPFS swarm TCP"
     from_port   = 4001
     to_port     = 4001
     protocol    = "tcp"
@@ -103,7 +103,15 @@ resource "aws_security_group" "this" {
   }
 
   ingress {
-    description = "Allow inbound IPFS websocket"
+    description = "Allow inbound IPFS swarm QUIC"
+    from_port   = 4001
+    to_port     = 4001
+    protocol    = "udp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow inbound IPFS swarm Websocket"
     from_port   = 4002
     to_port     = 4002
     protocol    = "tcp"
@@ -111,7 +119,7 @@ resource "aws_security_group" "this" {
   }
 
   ingress {
-    description = "Allow inbound IPFS HTTP"
+    description = "Allow inbound IPFS gateway HTTP"
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"

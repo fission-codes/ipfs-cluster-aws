@@ -32,7 +32,16 @@ in
 
     system.autoUpgrade.enable = true;
 
-    networking.firewall.allowedTCPPorts = [ 8080 9096 ];
+    networking.firewall.allowedTCPPorts = [
+      4001 # IPFS swarm TCP
+      4002 # IPFS swarm Websocket
+      8080 # IPFS gateway
+      9096 # IPFS Cluster swarm
+    ];
+
+    networking.firewall.allowedUDPPorts = [
+      4001 # IPFS swarm QUIC
+    ];
 
     services.openssh.enable = true;
 
@@ -65,6 +74,15 @@ in
     services.ipfs = {
       enable = true;
       emptyRepo = true;
+
+      swarmAddress = [
+        "/ip4/0.0.0.0/tcp/4001"
+        "/ip6/::/tcp/4001"
+        "/ip4/0.0.0.0/udp/4001/quic"
+        "/ip6/::/udp/4001/quic"
+        "/ip4/0.0.0.0/tcp/4002/ws"
+        "/ip6/::/tcp/4002/ws"
+      ];
 
       extraConfig = {
         Datastore = {
