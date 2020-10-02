@@ -23,6 +23,11 @@ in
       type = str;
       description = "Name of AWS S3 bucket to use as data store.";
     };
+
+    fqdn = mkOption {
+      type = str;
+      description = "Fully qualified domain name assigned to node, for setting up IPFS gateway and swarm TLS via ACME.";
+    };
   };
 
   config = mkIf cfg.enable {
@@ -34,8 +39,8 @@ in
 
     networking.firewall.allowedTCPPorts = [
       4001 # IPFS swarm TCP
-      4002 # IPFS swarm Websocket
-      8080 # IPFS gateway
+      4003 # IPFS swarm Secure Websocket
+      8080 # IPFS gateway HTTP
       9096 # IPFS Cluster swarm
     ];
 
@@ -43,7 +48,33 @@ in
       4001 # IPFS swarm QUIC
     ];
 
+    security.acme = {
+      acceptTerms = true;
+    };
+
     services.openssh.enable = true;
+
+    services.nginx = {
+      enable = true;
+      recommendedOptimisation = true;
+      recommendedProxySettings = true;
+      recommendedTlsSettings = true;
+
+      virtualHosts."${cfg.fqdn}" = {
+        listen = [
+          { addr = "0.0.0.0"; port = 443; ssl = true; }
+          { addr = "[::]";    port = 443; ssl = true; extraParameters = [ "ipv6only=on" ]; }
+        ];
+
+        onlySSL = true;
+        enableACME = true;
+
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:4002";
+          proxyWebsockets = true;
+        };
+      };
+    };
 
     systemd.services.ipfs-init = {
       unitConfig.PartOf = [ "ipfs.service" ];
@@ -80,8 +111,8 @@ in
         "/ip6/::/tcp/4001"
         "/ip4/0.0.0.0/udp/4001/quic"
         "/ip6/::/udp/4001/quic"
-        "/ip4/0.0.0.0/tcp/4002/ws"
-        "/ip6/::/tcp/4002/ws"
+        "/ip4/127.0.0.1/tcp/4002/ws"
+        "/ip6/::1/tcp/4002/ws"
       ];
 
       extraConfig = {

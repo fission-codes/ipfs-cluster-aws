@@ -9,6 +9,7 @@ locals {
   generate_private_key = var.public_key == null
   public_key           = local.generate_private_key ? tls_private_key.this[0].public_key_openssh : var.public_key
   node_ips             = concat(module.ipfs-cluster-aws-region-1.node_ips, module.ipfs-cluster-aws-region-2.node_ips)
+  node_fqdns           = concat(module.ipfs-cluster-aws-region-1.node_fqdns, module.ipfs-cluster-aws-region-2.node_fqdns)
   bucket_names         = concat(module.ipfs-cluster-aws-region-1.bucket_names, module.ipfs-cluster-aws-region-2.bucket_names)
 }
 
@@ -66,12 +67,13 @@ module "ipfs-cluster-aws-region-1" {
   source        = "./ipfs-cluster-aws-region"
   env           = local.env
   maintainer    = local.maintainer
-  name          = local.name
+  name          = "${local.name}-eu-north-1"
   node_count    = var.region_node_counts["eu-north-1"]
   node_names    = local.region_node_names["eu-north-1"]
   instance_type = var.instance_type
   public_key    = local.public_key
   volume_size   = var.volume_size
+  domain        = var.domain
   providers = {
     aws = aws.eu-north-1
   }
@@ -80,13 +82,14 @@ module "ipfs-cluster-aws-region-1" {
 module "ipfs-cluster-aws-region-2" {
   source        = "./ipfs-cluster-aws-region"
   env           = local.env
-  name          = local.name
   maintainer    = local.maintainer
+  name          = "${local.name}-us-east-1"
   node_count    = var.region_node_counts["us-east-1"]
   node_names    = local.region_node_names["us-east-1"]
   instance_type = var.instance_type
   public_key    = local.public_key
   volume_size   = var.volume_size
+  domain        = var.domain
   providers = {
     aws = aws.us-east-1
   }
@@ -107,6 +110,8 @@ resource "local_file" "configuration" {
 
       networking.hostName = "${local.env}-ipfs-cluster-node${count.index}";
 
+      security.acme.email = "${var.acmeEmail}";
+
       services.ipfs-cluster.bootstrapPeers = [
         ${join(" ", [for i in range(local.node_count) : "\"/ip4/${local.node_ips[i]}/tcp/9096/ipfs/${data.local_file.node_id[i].content}\"" if i != count.index])}
       ];
@@ -115,6 +120,7 @@ resource "local_file" "configuration" {
         enable = true;
         region = "${local.region_names[count.index]}";
         bucket = "${local.bucket_names[count.index]}";
+        fqdn = "${local.node_fqdns[count.index]}";
       };
     }
   EOT
@@ -164,7 +170,7 @@ resource "null_resource" "deploy_nixos" {
     always = uuid()
   }
 
-  depends_on = [null_resource.deploy_secrets]
+  depends_on = [null_resource.deploy_secrets, local_file.configuration]
 
   provisioner "local-exec" {
     command = "deploy-nixos root@${local.node_ips[count.index]} --config out/node${count.index}/configuration.nix"
@@ -191,4 +197,8 @@ resource "local_file" "ip" {
 
 output "node_ips" {
   value = local.node_ips
+}
+
+output "node_fqdns" {
+  value = local.node_fqdns
 }

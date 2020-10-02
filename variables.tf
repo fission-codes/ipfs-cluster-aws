@@ -35,3 +35,15 @@ variable "volume_size" {
   type        = number
   default     = 50
 }
+
+variable "domain" {
+  description = "Domain name of AWS Route53 hosted zone to which records are added for subdomains."
+  type        = string
+  default     = "runfission.net"
+}
+
+variable "acmeEmail" {
+  description = "Email address where Let's Encrypt can contact you regarding ACME certificates."
+  type        = string
+  default     = "info@fission.codes"
+}

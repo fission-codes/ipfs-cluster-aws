@@ -5,7 +5,7 @@ provider "aws" {}
 # Local variables
 locals {
   maintainer = var.maintainer != null ? var.maintainer : var.env
-  name       = var.name != null ? var.name : "${var.env}-ipfs-cluster"
+  name       = var.name != null ? var.name : "${var.env}-ipfs-cluster-${data.aws_region.current.name}"
   node_names = [for i in range(var.node_count) : length(var.node_names) > i ? var.node_names[i] : "${local.name}-node${i}"]
 
   tags = {
@@ -23,6 +23,10 @@ locals {
 
 data "aws_region" "current" {}
 
+data "aws_route53_zone" "this" {
+  name = "${var.domain}."
+}
+
 data "aws_availability_zones" "available" {
   state = "available"
 }
@@ -38,14 +42,17 @@ module "ami" {
 #
 
 resource "aws_s3_bucket" "this" {
-  bucket_prefix = "${local.name}-${data.aws_region.current.name}"
+  bucket_prefix = "${local.name}-"
   acl           = "private"
-  tags          = merge(local.tags, { Name = data.aws_region.current.name })
+  tags          = local.tags
+  # # to destroy buckets with objects in them, uncomment this, apply the configuration, and then destroy
+  # force_destroy = true
 }
 
 resource "aws_vpc" "this" {
-  cidr_block = "10.0.0.0/16"
-  tags       = local.tags
+  cidr_block                       = "10.0.0.0/16"
+  assign_generated_ipv6_cidr_block = true
+  tags                             = local.tags
 }
 
 resource "aws_internet_gateway" "this" {
@@ -87,59 +94,66 @@ resource "aws_security_group" "this" {
   tags   = local.tags
 
   ingress {
-    description = "Allow inbound SSH"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "Allow inbound SSH"
+    from_port        = 22
+    to_port          = 22
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   ingress {
-    description = "Allow inbound IPFS swarm TCP"
-    from_port   = 4001
-    to_port     = 4001
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "Allow inbound IPFS swarm TCP"
+    from_port        = 4001
+    to_port          = 4001
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   ingress {
-    description = "Allow inbound IPFS swarm QUIC"
-    from_port   = 4001
-    to_port     = 4001
-    protocol    = "udp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "Allow inbound IPFS swarm QUIC"
+    from_port        = 4001
+    to_port          = 4001
+    protocol         = "udp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   ingress {
-    description = "Allow inbound IPFS swarm Websocket"
-    from_port   = 4002
-    to_port     = 4002
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "Allow inbound IPFS swarm Secure Websocket"
+    from_port        = 4003
+    to_port          = 4003
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   ingress {
-    description = "Allow inbound IPFS gateway HTTP"
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "Allow inbound IPFS gateway HTTP"
+    from_port        = 8080
+    to_port          = 8080
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   ingress {
-    description = "Allow inbound ipfs-cluster swarm"
-    from_port   = 9096
-    to_port     = 9096
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "Allow inbound IPFS Cluster swarm"
+    from_port        = 9096
+    to_port          = 9096
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 
   egress {
-    description = "Allow all outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "Allow all outbound traffic"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
   }
 }
 
@@ -155,7 +169,7 @@ resource "aws_instance" "this" {
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.this[count.index].id
   vpc_security_group_ids      = [aws_security_group.this.id]
-  depends_on                  = [aws_route_table_association.this, aws_security_group.this]
+  depends_on                  = [aws_route_table_association.this, aws_security_group.this, aws_s3_bucket.this]
   associate_public_ip_address = true
   key_name                    = aws_key_pair.this.key_name
   iam_instance_profile        = aws_iam_instance_profile.this.name
@@ -171,12 +185,12 @@ resource "aws_instance" "this" {
 }
 
 resource "aws_iam_instance_profile" "this" {
-  name = "${local.name}-${data.aws_region.current.name}"
+  name = local.name
   role = aws_iam_role.this.name
 }
 
 resource "aws_iam_role" "this" {
-  name = "${local.name}-${data.aws_region.current.name}"
+  name = local.name
   tags = local.tags
 
   assume_role_policy = <<-EOT
@@ -229,14 +243,33 @@ resource "aws_iam_role_policy" "this" {
   EOT
 }
 
+resource "aws_route53_record" "this" {
+  count   = var.node_count
+  zone_id = data.aws_route53_zone.this.zone_id
+  name    = "${local.node_names[count.index]}.${data.aws_route53_zone.this.name}"
+  type    = "A"
+  ttl     = "600"
+  records = [aws_instance.this[count.index].public_ip]
+}
+
 #
 # Outputs
 #
 
 output "node_ips" {
   value = aws_instance.this.*.public_ip
+  # wait until everything is ready
+  depends_on = [aws_instance.this, aws_s3_bucket.this, aws_route53_record.this]
+}
+
+output "node_fqdns" {
+  value = aws_route53_record.this.*.fqdn
+  # wait until everything is ready
+  depends_on = [aws_instance.this, aws_s3_bucket.this, aws_route53_record.this]
 }
 
 output "bucket_names" {
   value = [for x in range(var.node_count) : aws_s3_bucket.this.id]
+  # wait until everything is ready
+  depends_on = [aws_instance.this, aws_s3_bucket.this, aws_route53_record.this]
 }

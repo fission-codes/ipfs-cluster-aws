@@ -49,5 +49,10 @@ variable "public_key" {
 variable "volume_size" {
   description = "Size of root volumes in GB."
   type        = number
-  default     = 20
+  default     = 50
+}
+
+variable "domain" {
+  description = "Top level domain name on which records are added for subdomains."
+  type        = string
 }
