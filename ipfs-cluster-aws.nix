@@ -37,20 +37,24 @@ in
 
     system.autoUpgrade.enable = true;
 
-    networking.firewall.allowedTCPPorts = [
-      4001 # IPFS swarm TCP
-      4003 # IPFS swarm Secure Websocket
-      8080 # IPFS gateway HTTP
-      9096 # IPFS Cluster swarm
-    ];
-
-    networking.firewall.allowedUDPPorts = [
-      4001 # IPFS swarm QUIC
-    ];
-
-    security.acme = {
-      acceptTerms = true;
+    networking = {
+      enableIPv6 = true;
+      firewall = {
+        allowedTCPPorts = [
+          80 # HTTP (for ACME, redirects to :443)
+          443 # HTTPS (for ACME, redirects to :4003)
+          4001 # IPFS swarm TCP
+          4003 # IPFS swarm Secure Websocket
+          8080 # IPFS gateway HTTP
+          9096 # IPFS Cluster swarm
+        ];
+        allowedUDPPorts = [
+          4001 # IPFS swarm QUIC
+        ];
+      };
     };
+
+    security.acme.acceptTerms = true;
 
     services.openssh.enable = true;
 
@@ -61,13 +65,23 @@ in
       recommendedTlsSettings = true;
 
       virtualHosts."${cfg.fqdn}" = {
-        listen = [
-          { addr = "0.0.0.0"; port = 443; ssl = true; }
-          { addr = "[::]";    port = 443; ssl = true; extraParameters = [ "ipv6only=on" ]; }
-        ];
-
-        onlySSL = true;
+        forceSSL = true;
         enableACME = true;
+
+        locations."/".extraConfig = ''
+          return 301 https://${cfg.fqdn}:4003$request_uri;
+        '';
+      };
+
+      virtualHosts."ipfs-swarm-wss" = {
+        serverName = cfg.fqdn;
+        useACMEHost = cfg.fqdn;
+        forceSSL = true;
+
+        listen = [
+          { addr = "0.0.0.0"; port = 4003; ssl = true; }
+          { addr = "[::]";    port = 4003; ssl = true; }
+        ];
 
         locations."/" = {
           proxyPass = "http://127.0.0.1:4002";

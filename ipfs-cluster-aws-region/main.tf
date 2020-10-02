@@ -103,6 +103,24 @@ resource "aws_security_group" "this" {
   }
 
   ingress {
+    description      = "Allow inbound HTTP"
+    from_port        = 80
+    to_port          = 80
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  ingress {
+    description      = "Allow inbound HTTPS"
+    from_port        = 443
+    to_port          = 443
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  ingress {
     description      = "Allow inbound IPFS swarm TCP"
     from_port        = 4001
     to_port          = 4001
