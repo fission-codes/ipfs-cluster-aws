@@ -41,11 +41,10 @@ in
       enableIPv6 = true;
       firewall = {
         allowedTCPPorts = [
-          80 # HTTP (for ACME, redirects to :443)
-          443 # HTTPS (for ACME, redirects to :4003)
+          80 # HTTP ACME and redirect to :443
+          443 # IPFS gateway https
           4001 # IPFS swarm TCP
           4003 # IPFS swarm Secure Websocket
-          8080 # IPFS gateway HTTP
           9096 # IPFS Cluster swarm
         ];
         allowedUDPPorts = [
@@ -64,16 +63,18 @@ in
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
 
-      virtualHosts."${cfg.fqdn}" = {
+      virtualHosts.ipfs-gateway = {
+        serverName = cfg.fqdn;
         forceSSL = true;
         enableACME = true;
 
-        locations."/".extraConfig = ''
-          return 301 https://${cfg.fqdn}:4003$request_uri;
-        '';
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:8080";
+          proxyWebsockets = true;
+        };
       };
 
-      virtualHosts."ipfs-swarm-wss" = {
+      virtualHosts.ipfs-swarm-wss = {
         serverName = cfg.fqdn;
         useACMEHost = cfg.fqdn;
         forceSSL = true;
