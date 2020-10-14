@@ -1,8 +1,7 @@
 { haskellPackages, writeHaskellBin }:
 name: text:
   writeHaskellBin name { libraries = with haskellPackages; [
-    turtle
-    text-show
+    extra turtle text-show
   ]; } ''
     {-# LANGUAGE OverloadedStrings #-}
     import qualified System.Environment
@@ -13,6 +12,7 @@ name: text:
     import Data.Text.IO (putStrLn)
     import TextShow
     import Prelude hiding (putStrLn, unwords, intercalate)
+    import Control.Monad.Extra (whenJust)
 
     export :: Text -> Text -> IO ()
     export var val = do
@@ -26,7 +26,7 @@ name: text:
 
     ssh :: Text -> Text -> IO ()
     ssh destination command = do
-      putStrLn ("Connecting via ssh to '" <> destination <>"' and running `" <> command <> "` ...")
+      putStrLn ("Connecting via SSH to '" <> destination <>"' and running `" <> command <> "` ...")
       procs "ssh" (sshOptions <> [destination, command]) empty
 
     sshOptions =

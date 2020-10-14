@@ -27,12 +27,10 @@ let
       main = do
         (destination, config) <-
           options "Deploy a NixOS configuration via SSH." $ (,)
-            <$> (argText "destination" "SSH destination")
-            <*> (optText "config" 'c' "NixOS configuration" & optional)
+            <$> (argText "destination" "SSH destination, eg. root@server-fqdn.example.com or user@123.45.67.89")
+            <*> (optText "config" 'c' "path of NixOS configuration to be uploaded to /etc/nixos/configuration.nix" & optional)
         rsync sources (destination <> ":" <> "/etc/nixos/")
-        do
-          let (Just source) = config
-          rsync [source] (destination <> ":" <> "/etc/nixos/configuration.nix")
+        whenJust config (\source -> rsync [source] (destination <> ":" <> "/etc/nixos/configuration.nix"))
         ssh destination deployCommand
 
       sources = [ "ipfs-cluster-aws.nix", "ipfs-cluster.nix", "nix" ]

@@ -17,6 +17,10 @@ locals {
 # Data Sources
 #
 
+data "aws_route53_zone" "this" {
+  name = "${var.domain}."
+}
+
 data "local_file" "node_id" {
   count = local.node_count
   # wait until file is created
@@ -56,6 +60,21 @@ resource "null_resource" "node_identity" {
 resource "tls_private_key" "this" {
   count     = local.generate_private_key ? 1 : 0
   algorithm = "RSA"
+}
+
+# Latency-based routing configuration
+resource "aws_route53_record" "this" {
+  count = length(local.region_names)
+  zone_id = data.aws_route53_zone.this.zone_id
+  name    = local.name
+  type    = "CNAME"
+  ttl     = "5"
+  set_identifier = "${local.name}-${local.region_names[count.index]}"
+  records        = [ "${local.name}-${local.region_names[count.index]}" ]
+
+  latency_routing_policy {
+    region = local.region_names[count.index]
+  }
 }
 
 #
@@ -201,4 +220,8 @@ output "node_ips" {
 
 output "node_fqdns" {
   value = local.node_fqdns
+}
+
+output "fqdn" {
+  value = aws_route53_record.this[0].fqdn
 }

@@ -103,6 +103,22 @@ resource "aws_security_group" "this" {
   }
 
   ingress {
+    description      = "Allow inbound ICMP"
+    protocol = "icmp"
+    from_port = -1
+    to_port = -1
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description      = "Allow inbound ICMPv6"
+    protocol = "icmpv6"
+    from_port = -1
+    to_port = -1
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  ingress {
     description      = "Allow inbound HTTP"
     from_port        = 80
     to_port          = 80
@@ -260,6 +276,23 @@ resource "aws_route53_record" "this" {
   ttl     = "600"
   records = [aws_instance.this[count.index].public_ip]
 }
+
+
+resource "aws_route53_record" "round-robin" {
+  count = var.node_count
+  zone_id = data.aws_route53_zone.this.zone_id
+  name    = local.name
+  type    = "CNAME"
+  ttl     = "5"
+
+  set_identifier = local.node_names[count.index]
+  records = aws_route53_record.this.*.fqdn
+
+  weighted_routing_policy {
+    weight = 1
+  }
+}
+
 
 #
 # Outputs
