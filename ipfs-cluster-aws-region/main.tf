@@ -4,28 +4,12 @@ provider "aws" {}
 
 # Local variables
 locals {
-  maintainer = var.maintainer != null ? var.maintainer : var.env
-  name       = var.name != null ? var.name : "${var.env}-ipfs-cluster-${data.aws_region.current.name}"
-  node_names = [for i in range(var.node_count) : length(var.node_names) > i ? var.node_names[i] : "${local.name}-node${i}"]
-
-  tags = {
-    Name       = local.name
-    Env        = var.env
-    Maintainer = local.maintainer
-    ManagedBy  = "Terrafrom"
-    DoNotEdit  = "This resource is managed by Terraform. Do not edit manually. Contact the maintainer to request changes."
-  }
+  name = var.tags["Name"]
 }
 
 #
 # Data sources
 #
-
-data "aws_region" "current" {}
-
-data "aws_route53_zone" "this" {
-  name = "${var.domain}."
-}
 
 data "aws_availability_zones" "available" {
   state = "available"
@@ -44,28 +28,28 @@ module "ami" {
 resource "aws_s3_bucket" "this" {
   bucket_prefix = "${local.name}-"
   acl           = "private"
-  tags          = local.tags
-  # # to destroy buckets with objects in them, uncomment this, apply the configuration, and then destroy
-  # force_destroy = true
+  tags          = var.tags
+
+  force_destroy = lookup(var.tags, "Environment", "") != "production"
 }
 
 resource "aws_vpc" "this" {
   cidr_block                       = "10.0.0.0/16"
   assign_generated_ipv6_cidr_block = true
-  tags                             = local.tags
+  tags                             = var.tags
 }
 
 resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
-  tags   = local.tags
+  tags   = var.tags
 }
 
 resource "aws_subnet" "this" {
-  count             = var.node_count
+  count             = length(var.nodes)
   vpc_id            = aws_vpc.this.id
   availability_zone = element(data.aws_availability_zones.available.names, count.index)
   cidr_block        = "10.0.${count.index}.0/24"
-  tags              = local.tags
+  tags              = var.tags
   lifecycle {
     ignore_changes = [availability_zone]
   }
@@ -73,7 +57,7 @@ resource "aws_subnet" "this" {
 
 resource "aws_route_table" "this" {
   vpc_id = aws_vpc.this.id
-  tags   = local.tags
+  tags   = var.tags
 
   route {
     cidr_block = "0.0.0.0/0"
@@ -82,7 +66,7 @@ resource "aws_route_table" "this" {
 }
 
 resource "aws_route_table_association" "this" {
-  count          = var.node_count
+  count          = length(var.nodes)
   subnet_id      = aws_subnet.this[count.index].id
   route_table_id = aws_route_table.this.id
 }
@@ -91,7 +75,7 @@ resource "aws_route_table_association" "this" {
 resource "aws_security_group" "this" {
   name   = local.name
   vpc_id = aws_vpc.this.id
-  tags   = local.tags
+  tags   = var.tags
 
   ingress {
     description      = "Allow inbound SSH"
@@ -103,18 +87,18 @@ resource "aws_security_group" "this" {
   }
 
   ingress {
-    description      = "Allow inbound ICMP"
-    protocol = "icmp"
-    from_port = -1
-    to_port = -1
+    description = "Allow inbound ICMP"
+    protocol    = "icmp"
+    from_port   = -1
+    to_port     = -1
     cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
     description      = "Allow inbound ICMPv6"
-    protocol = "icmpv6"
-    from_port = -1
-    to_port = -1
+    protocol         = "icmpv6"
+    from_port        = -1
+    to_port          = -1
     ipv6_cidr_blocks = ["::/0"]
   }
 
@@ -189,7 +173,7 @@ resource "aws_key_pair" "this" {
 }
 
 resource "aws_instance" "this" {
-  count                       = var.node_count
+  count                       = length(var.nodes)
   ami                         = module.ami.ami
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.this[count.index].id
@@ -198,7 +182,7 @@ resource "aws_instance" "this" {
   associate_public_ip_address = true
   key_name                    = aws_key_pair.this.key_name
   iam_instance_profile        = aws_iam_instance_profile.this.name
-  tags                        = merge(local.tags, { Name = local.node_names[count.index] })
+  tags                        = merge(var.tags, { Name = var.nodes[count.index].node_prefix })
 
   root_block_device {
     volume_size = var.volume_size
@@ -216,7 +200,7 @@ resource "aws_iam_instance_profile" "this" {
 
 resource "aws_iam_role" "this" {
   name = local.name
-  tags = local.tags
+  tags = var.tags
 
   assume_role_policy = <<-EOT
     {
@@ -268,50 +252,14 @@ resource "aws_iam_role_policy" "this" {
   EOT
 }
 
-resource "aws_route53_record" "this" {
-  count   = var.node_count
-  zone_id = data.aws_route53_zone.this.zone_id
-  name    = "${local.node_names[count.index]}.${data.aws_route53_zone.this.name}"
-  type    = "A"
-  ttl     = "600"
-  records = [aws_instance.this[count.index].public_ip]
-}
-
-
-resource "aws_route53_record" "round-robin" {
-  count = var.node_count
-  zone_id = data.aws_route53_zone.this.zone_id
-  name    = local.name
-  type    = "CNAME"
-  ttl     = "5"
-
-  set_identifier = local.node_names[count.index]
-  records = aws_route53_record.this.*.fqdn
-
-  weighted_routing_policy {
-    weight = 1
-  }
-}
-
-
 #
 # Outputs
 #
 
 output "node_ips" {
-  value = aws_instance.this.*.public_ip
-  # wait until everything is ready
-  depends_on = [aws_instance.this, aws_s3_bucket.this, aws_route53_record.this]
-}
-
-output "node_fqdns" {
-  value = aws_route53_record.this.*.fqdn
-  # wait until everything is ready
-  depends_on = [aws_instance.this, aws_s3_bucket.this, aws_route53_record.this]
+  value = aws_instance.this[*].public_ip
 }
 
 output "bucket_names" {
-  value = [for x in range(var.node_count) : aws_s3_bucket.this.id]
-  # wait until everything is ready
-  depends_on = [aws_instance.this, aws_s3_bucket.this, aws_route53_record.this]
+  value = [for x in range(length(var.nodes)) : aws_s3_bucket.this.id]
 }

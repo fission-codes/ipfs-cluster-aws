@@ -12,7 +12,7 @@ name: text:
     import Data.Text.IO (putStrLn)
     import TextShow
     import Prelude hiding (putStrLn, unwords, intercalate)
-    import Control.Monad.Extra (whenJust)
+    import Control.Monad.Extra (whenJust, whenM)
 
     export :: Text -> Text -> IO ()
     export var val = do

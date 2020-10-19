@@ -24,14 +24,24 @@ in
       description = "Name of AWS S3 bucket to use as data store.";
     };
 
-    fqdn = mkOption {
+    nodeFqdn = mkOption {
       type = str;
       description = "Fully qualified domain name assigned to node, for setting up IPFS gateway and swarm TLS via ACME.";
+    };
+
+    regionFqdn = mkOption {
+      type = str;
+      description = "Fully qualified domain name assigned to region, for setting up IPFS gateway and swarm TLS";
+    };
+
+    fqdn = mkOption {
+      type = str;
+      description = "Fully qualified domain name assigned to cluster, for setting up IPFS gateway and swarm TLS";
     };
   };
 
   config = mkIf cfg.enable {
-    nixpkgs.overlays = [ (import ./nix/overlay.nix) ];
+    nixpkgs.overlays = [ (import ../nix/overlay.nix) ];
 
     swapDevices = [ { device = "/swapfile"; size = 4096; } ];
 
@@ -43,7 +53,7 @@ in
         allowedTCPPorts = [
           80 # HTTP ACME and redirect to :443
           443 # IPFS gateway https
-          4001 # IPFS swarm TCP
+          4001 # IPFS swarm TCPACME
           4003 # IPFS swarm Secure Websocket
           9096 # IPFS Cluster swarm
         ];
@@ -64,7 +74,7 @@ in
       recommendedTlsSettings = true;
 
       virtualHosts.ipfs-gateway = {
-        serverName = cfg.fqdn;
+        serverName = cfg.nodeFqdn;
         forceSSL = true;
         enableACME = true;
 
@@ -75,9 +85,10 @@ in
       };
 
       virtualHosts.ipfs-swarm-wss = {
-        serverName = cfg.fqdn;
-        useACMEHost = cfg.fqdn;
-        forceSSL = true;
+        serverName = lib.escape ["."] "~^(${cfg.fqdn}|${cfg.regionFqdn}|${cfg.nodeFqdn})$";
+        onlySSL = true;
+        sslCertificate = "/var/lib/ssl/cert";
+        sslCertificateKey = "/var/lib/ssl/key";
 
         listen = [
           { addr = "0.0.0.0"; port = 4003; ssl = true; }

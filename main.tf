@@ -1,116 +1,186 @@
+# Terraform cloud infrastructure and deployment
+
+terraform {
+  required_providers {
+    acme = {
+      source  = "getstackhead/acme"
+      version = "1.5.0-patched"
+    }
+    shell = {
+      source  = "nixpkgs/shell"
+      version = "1.6.0"
+    }
+  }
+}
+
+#
+# Local variables
+#
+
 locals {
-  env                  = var.env != null ? var.env : lower(local.iam_username)
-  maintainer           = var.maintainer != null ? var.maintainer : var.env
-  name                 = "${local.env}-ipfs-cluster"
-  node_count           = sum(values(var.region_node_counts))
-  region_names         = [for r, c in var.region_node_counts : r]
-  region_node_names    = { for r, c in var.region_node_counts : r => [for i in range(c) : "ipfs-cluster-${local.env}-${r}-node-${i}"] }
+  environment                  = var.environment != null ? var.environment : lower(local.iam_username)
+  maintainer           = var.maintainer != null ? var.maintainer : local.environment
+  prefix               = "${local.environment}-ipfs-cluster"
   iam_username         = element(reverse(split("/", data.aws_caller_identity.current.arn)), 0)
   generate_private_key = var.public_key == null
-  public_key           = local.generate_private_key ? tls_private_key.this[0].public_key_openssh : var.public_key
-  node_ips             = concat(module.ipfs-cluster-aws-region-1.node_ips, module.ipfs-cluster-aws-region-2.node_ips)
-  node_fqdns           = concat(module.ipfs-cluster-aws-region-1.node_fqdns, module.ipfs-cluster-aws-region-2.node_fqdns)
-  bucket_names         = concat(module.ipfs-cluster-aws-region-1.bucket_names, module.ipfs-cluster-aws-region-2.bucket_names)
+  public_key           = local.generate_private_key ? tls_private_key.deploy[0].public_key_openssh : var.public_key
+  subdomain            = var.subdomain != null ? var.subdomain : local.prefix
+  fqdn                 = "${local.subdomain}.${var.domain}"
+
+  tags = merge(
+    {
+      Environment        = local.environment
+      Maintainer = local.maintainer
+      ManagedBy  = "Terrafrom"
+      DoNotEdit  = "This resource is managed by Terraform. Do not edit manually. Contact the maintainer to request changes."
+    },
+    var.tags == null ? var.tags : {},
+    {
+      Name = local.prefix
+    }
+  )
+
+  regions = [for r in local.all_regions : {
+    region_name       = r
+    region_node_count = var.region_node_counts[r]
+    region_prefix     = "${local.prefix}-${r}"
+    region_fqdn       = "${local.prefix}-${r}.${var.domain}"
+  } if contains(keys(var.region_node_counts), r)]
+
+  nodes = flatten([for r in local.regions : [for i in range(r.region_node_count) : {
+    node_index        = i
+    node_prefix       = "${r.region_prefix}-node${i}"
+    node_fqdn         = "${r.region_prefix}-node${i}.${var.domain}"
+    region_name       = r.region_name
+    region_prefix     = r.region_prefix
+    region_fqdn       = r.region_fqdn
+    region_node_count = r.region_node_count
+  }]])
+
+  region_map       = { for r in local.regions : r.region_name => r }
+  region_nodes_map = { for r in local.regions : r.region_name => [for n in local.nodes : n if n.region_name == r.region_name] }
 }
 
 #
 # Data Sources
 #
 
+# Get the account details of the currently authenticated AMI user .
+data "aws_caller_identity" "current" {}
+
+# Get the Hosted Zone ID for the domain
 data "aws_route53_zone" "this" {
   name = "${var.domain}."
 }
 
-data "local_file" "node_id" {
-  count = local.node_count
-  # wait until file is created
-  filename = "out/node${count.index}/ipfs-cluster-id${replace(null_resource.node_identity[count.index].id, "/.*/", "")}"
-}
-
-data "local_file" "node_private_key" {
-  count = local.node_count
-  # wait until file is created
-  filename = "SECRET/node${count.index}/ipfs-cluster-private_key${replace(null_resource.node_identity[count.index].id, "/.*/", "")}"
-}
-
-# Get the account details of the currently authenticated AMI user .
-data "aws_caller_identity" "current" {}
-
 #
-# Resources
+# DNS
 #
 
-resource "random_id" "cluster_secret" {
-  byte_length = 32
-}
+# Route to region with lowest latency
+resource "aws_route53_record" "this" {
+  count          = length(local.regions)
+  zone_id        = data.aws_route53_zone.this.zone_id
+  name           = "${local.fqdn}."
+  type           = "A"
+  set_identifier = "${local.prefix}-${local.regions[count.index].region_name}"
+  alias {
+    name                   = "${aws_route53_record.regions[count.index].fqdn}."
+    zone_id                = data.aws_route53_zone.this.zone_id
+    evaluate_target_health = false
+  }
 
-resource "null_resource" "node_identity" {
-  count = local.node_count
-  provisioner "local-exec" {
-    command = <<-EOT
-      true && \
-        mkdir -p out/node${count.index} && \
-        mkdir -p SECRET/node${count.index} && \
-        ipfs-key -type ed25519 -f -pidout out/node${count.index}/ipfs-cluster-id -prvout SECRET/node${count.index}/ipfs-cluster-private_key
-    EOT
+  latency_routing_policy {
+    region = local.regions[count.index].region_name
   }
 }
 
-# Generate a key pair if public_key is not provided.
-resource "tls_private_key" "this" {
+# Distribute among nodes within region
+resource "aws_route53_record" "regions" {
+  count          = length(local.nodes)
+  zone_id        = data.aws_route53_zone.this.zone_id
+  name           = local.nodes[count.index].region_fqdn
+  type           = "A"
+  set_identifier = local.nodes[count.index].node_prefix
+
+  alias {
+    name                   = "${aws_route53_record.nodes[count.index].fqdn}."
+    zone_id                = data.aws_route53_zone.this.zone_id
+    evaluate_target_health = false
+  }
+
+  weighted_routing_policy {
+    weight = 1
+  }
+}
+
+# Records per node
+resource "aws_route53_record" "nodes" {
+  count   = length(local.nodes)
+  zone_id = data.aws_route53_zone.this.zone_id
+  name    = "${local.nodes[count.index].node_fqdn}."
+  type    = "A"
+  ttl     = "600"
+  records = [local.node_ips[count.index]]
+}
+
+#
+# ACME TLS certificate
+#
+
+provider "acme" {
+  server_url = "https://acme-v02.api.letsencrypt.org/directory"
+}
+
+resource "tls_private_key" "https" {
+  algorithm = "RSA"
+}
+
+resource "acme_registration" "this" {
+  account_key_pem = tls_private_key.https.private_key_pem
+  email_address   = var.acme_email
+}
+
+resource "acme_certificate" "this" {
+  account_key_pem = acme_registration.this.account_key_pem
+  common_name     = local.fqdn
+  # subject_alternative_names = []
+  recursive_nameservers = data.aws_route53_zone.this.name_servers
+
+  dns_challenge {
+    provider = "route53"
+    config = {
+      AWS_HOSTED_ZONE_ID      = data.aws_route53_zone.this.zone_id
+      AWS_REGION              = "us-east-1"
+      AWS_PROPAGATION_TIMEOUT = 600
+      AWS_POLLING_INTERVAL    = 60
+    }
+  }
+}
+
+
+#
+# Secrets
+#
+
+# Generate a deployment key pair if public_key is not provided.
+resource "tls_private_key" "deploy" {
   count     = local.generate_private_key ? 1 : 0
   algorithm = "RSA"
 }
 
-# Latency-based routing configuration
-resource "aws_route53_record" "this" {
-  count = length(local.region_names)
-  zone_id = data.aws_route53_zone.this.zone_id
-  name    = local.name
-  type    = "CNAME"
-  ttl     = "5"
-  set_identifier = "${local.name}-${local.region_names[count.index]}"
-  records        = [ "${local.name}-${local.region_names[count.index]}" ]
-
-  latency_routing_policy {
-    region = local.region_names[count.index]
-  }
+# IPFS Cluster secret
+resource "random_id" "cluster_secret" {
+  byte_length = 32
 }
 
-#
-# Regions
-#
+# IPFS Cluster node id and private key
+resource "shell_script" "node_identity" {
+  count = length(local.nodes)
 
-# We have to define a module instance for each region since providers cannot be configured dynamically
-module "ipfs-cluster-aws-region-1" {
-  source        = "./ipfs-cluster-aws-region"
-  env           = local.env
-  maintainer    = local.maintainer
-  name          = "${local.name}-eu-north-1"
-  node_count    = var.region_node_counts["eu-north-1"]
-  node_names    = local.region_node_names["eu-north-1"]
-  instance_type = var.instance_type
-  public_key    = local.public_key
-  volume_size   = var.volume_size
-  domain        = var.domain
-  providers = {
-    aws = aws.eu-north-1
-  }
-}
-
-module "ipfs-cluster-aws-region-2" {
-  source        = "./ipfs-cluster-aws-region"
-  env           = local.env
-  maintainer    = local.maintainer
-  name          = "${local.name}-us-east-1"
-  node_count    = var.region_node_counts["us-east-1"]
-  node_names    = local.region_node_names["us-east-1"]
-  instance_type = var.instance_type
-  public_key    = local.public_key
-  volume_size   = var.volume_size
-  domain        = var.domain
-  providers = {
-    aws = aws.us-east-1
+  lifecycle_commands {
+    create = "ipfs-key"
+    delete = "true"
   }
 }
 
@@ -118,52 +188,32 @@ module "ipfs-cluster-aws-region-2" {
 # Deploy
 #
 
-# Generate NixOS configuration file for each node.
-resource "local_file" "configuration" {
-  count           = local.node_count
-  filename        = "out/node${count.index}/configuration.nix"
-  file_permission = "0666"
-  content         = <<-EOT
-    {
-      imports = [ ./ipfs-cluster-aws.nix ];
-
-      networking.hostName = "${local.env}-ipfs-cluster-node${count.index}";
-
-      security.acme.email = "${var.acmeEmail}";
-
-      services.ipfs-cluster.bootstrapPeers = [
-        ${join(" ", [for i in range(local.node_count) : "\"/ip4/${local.node_ips[i]}/tcp/9096/ipfs/${data.local_file.node_id[i].content}\"" if i != count.index])}
-      ];
-
-      services.ipfs-cluster-aws = {
-        enable = true;
-        region = "${local.region_names[count.index]}";
-        bucket = "${local.bucket_names[count.index]}";
-        fqdn = "${local.node_fqdns[count.index]}";
-      };
-    }
-  EOT
-}
-
 # Copy secrets to servers
 resource "null_resource" "deploy_secrets" {
-  count = local.node_count
+  count = length(local.nodes)
 
   triggers = {
     instance       = join(" ", tolist(local.node_ips))
     cluster_secret = random_id.cluster_secret.hex
+    node_identity  = jsonencode(shell_script.node_identity[count.index].output)
+    cert           = "${acme_certificate.this.certificate_pem}${acme_certificate.this.issuer_pem}"
+    key            = acme_certificate.this.private_key_pem
   }
-
-  depends_on = [local_file.configuration]
 
   connection {
     host        = local.node_ips[count.index]
-    private_key = local.generate_private_key ? tls_private_key.this[0].private_key_pem : null
+    private_key = local.generate_private_key ? tls_private_key.deploy[0].private_key_pem : null
   }
 
   # Wait until the host is up.
   provisioner "remote-exec" {
     inline = ["echo 'Hello, World!'"]
+  }
+
+  # Create SSL cert dir and chown to nginx (which is not installed yet so we use the permanent NixOS uid and gid)
+  # See https://github.com/NixOS/nixpkgs/blob/master/nixos/modules/misc/ids.nix
+  provisioner "remote-exec" {
+    inline = ["mkdir -p /var/lib/ssl/ && chown 60.60 /var/lib/ssl && chmod 500 /var/lib/ssl"]
   }
 
   provisioner "file" {
@@ -172,27 +222,78 @@ resource "null_resource" "deploy_secrets" {
   }
 
   provisioner "file" {
-    content     = jsonencode({ "id" = data.local_file.node_id[count.index].content, "private_key" = data.local_file.node_private_key[count.index].content })
+    content     = jsonencode(shell_script.node_identity[count.index].output)
     destination = "/root/SECRET_identity.json"
   }
 
+  provisioner "file" {
+    content     = acme_certificate.this.private_key_pem
+    destination = "/var/lib/ssl/key"
+  }
+
+  provisioner "file" {
+    content     = "${acme_certificate.this.certificate_pem}${acme_certificate.this.issuer_pem}"
+    destination = "/var/lib/ssl/cert"
+  }
+
   provisioner "remote-exec" {
-    inline = ["systemctl restart ipfs-cluster-init || echo 'Restarting ipfs-cluster failed.'"]
+    inline = [
+      "chown 60.60 /var/lib/ssl/key /var/lib/ssl/cert && chmod 400 /var/lib/ssl/key /var/lib/ssl/cert",
+      "systemctl restart ipfs-cluster-init || echo 'Restarting ipfs-cluster failed.'"
+    ]
   }
 }
 
 # Deploy NixOS
 resource "null_resource" "deploy_nixos" {
-  count = local.node_count
+  count = length(local.nodes)
 
   triggers = {
     always = uuid()
   }
 
-  depends_on = [null_resource.deploy_secrets, local_file.configuration]
+  depends_on = [null_resource.deploy_secrets]
+
+  connection {
+    host        = local.node_ips[count.index]
+    private_key = local.generate_private_key ? tls_private_key.deploy[0].private_key_pem : null
+  }
+
+  provisioner "file" {
+    content     = data.null_data_source.configuration[count.index].outputs.content
+    destination = "/etc/nixos/configuration.nix"
+  }
 
   provisioner "local-exec" {
-    command = "deploy-nixos root@${local.node_ips[count.index]} --config out/node${count.index}/configuration.nix"
+    command = "cd ${path.module} && deploy-nixos root@${local.node_ips[count.index]}"
+  }
+}
+
+# Generate NixOS configuration file for each node.
+data "null_data_source" "configuration" {
+  count = length(local.nodes)
+  inputs = { content = <<-EOT
+    {
+      imports = [ /root/ipfs-cluster-aws/nixos/ipfs-cluster-aws.nix ];
+
+      networking.hostName = "${local.environment}-ipfs-cluster-node${count.index}";
+
+      security.acme.email = "${var.acme_email}";
+
+      services.ipfs-cluster.bootstrapPeers = [
+        ${join(" ", [for i in range(length(local.nodes)) : "\"/ip4/${local.node_ips[i]}/tcp/9096/ipfs/${shell_script.node_identity[i].output["id"]}\"" if i != count.index])}
+      ];
+
+      services.ipfs-cluster-aws = {
+        enable = true;
+        region = "${local.nodes[count.index].region_name}";
+        bucket = "${local.bucket_names[count.index]}";
+        nodeFqdn = "${local.nodes[count.index].node_fqdn}";
+        regionFqdn = "${local.nodes[count.index].region_fqdn}";
+        fqdn = "${local.fqdn}";
+      };
+    }
+  EOT
   }
 }
 
@@ -204,14 +305,8 @@ resource "null_resource" "deploy_nixos" {
 resource "local_file" "private_key" {
   count             = local.generate_private_key ? 1 : 0
   filename          = "SECRET/private_key"
-  sensitive_content = tls_private_key.this[0].private_key_pem
+  sensitive_content = tls_private_key.deploy[0].private_key_pem
   file_permission   = "0600"
-}
-
-resource "local_file" "ip" {
-  count             = local.node_count
-  filename          = "out/node${count.index}/ip"
-  sensitive_content = local.node_ips[count.index]
 }
 
 output "node_ips" {
@@ -219,9 +314,10 @@ output "node_ips" {
 }
 
 output "node_fqdns" {
-  value = local.node_fqdns
+  value      = [for n in local.nodes : n.node_fqdn]
+  depends_on = [null_resource.deploy_nixos]
 }
 
 output "fqdn" {
-  value = aws_route53_record.this[0].fqdn
+  value = local.fqdn
 }

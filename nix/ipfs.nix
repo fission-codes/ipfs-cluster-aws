@@ -1,3 +1,5 @@
+# IPFS package with built-in S3 datastore plugin
+
 { stdenv, buildGoModule, fetchurl, nixosTests }:
 
 buildGoModule rec {
@@ -9,8 +11,6 @@ buildGoModule rec {
 
   subPackages = [ "cmd/ipfs" ];
 
-  passthru.tests.ipfs = nixosTests.ipfs;
-
   vendorSha256 = "1493a01ckgjmyxr88fk39la5fask4plnl0lajgixhyjzpr6p5hss";
 
   postInstall = ''
@@ -20,12 +20,4 @@ buildGoModule rec {
     substituteInPlace $out/etc/systemd/system/ipfs.service \
       --replace /usr/bin/ipfs $out/bin/ipfs
   '';
-
-  meta = with stdenv.lib; {
-    description = "A global, versioned, peer-to-peer filesystem";
-    homepage = "https://ipfs.io/";
-    license = licenses.mit;
-    platforms = platforms.unix;
-    maintainers = with maintainers; [ fpletz ];
-  };
 }

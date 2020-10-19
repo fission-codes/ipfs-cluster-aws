@@ -1,0 +1,4 @@
+# Example input variable configuration
+
+domain = example.com
+region_node_counts = { us-east-1 = 1, eu-north-1 = 2 }
