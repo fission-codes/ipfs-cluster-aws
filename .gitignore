@@ -1,6 +1,6 @@
 result
 .terraform*
-terraform*
+terraform.tfstate*
 *.tfvars
 .envrc
 SECRET*

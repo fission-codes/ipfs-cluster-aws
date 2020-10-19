@@ -91,6 +91,8 @@ in
         ipfs-cluster-service init --force
       '';
 
+      wants = [ "ipfs.service" ];
+      after = [ "ipfs.service" ];
       wantedBy = [ "default.target" ];
 
       serviceConfig = {
@@ -114,8 +116,8 @@ in
       '';
 
       wantedBy = [ "default.target" ];
-      wants = [ "ipfs-cluster-init.service" ];
-      after = [ "ipfs-cluster-init.service" ];
+      wants = [ "ipfs-cluster-init.service" "ipfs.service" ];
+      after = [ "ipfs-cluster-init.service" "ipfs.service" ];
 
       restartIfChanged = true;
 
