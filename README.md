@@ -1,6 +1,6 @@
 ## [ipfs-cluster](https://cluster.ipfs.io/) on AWS
 
-Deploys a load balanced multi-region network of [ipfs-cluster](https://cluster.ipfs.io/) nodes running on [NixOS](https://nixos.org/) on AWS [EC2](https://aws.amazon.com/ec2/) cloud servers using [Terraform](https://www.terraform.io/).
+Deploys a multi-region DNS-balanced TLS-enabled network of [ipfs-cluster](https://cluster.ipfs.io/) nodes running on [NixOS](https://nixos.org/) on AWS [EC2](https://aws.amazon.com/ec2/) cloud servers using [Terraform](https://www.terraform.io/).
 
 First, Install [nix](https://nixos.org/download.html), clone this repo and `cd` in.
 
