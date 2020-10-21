@@ -18,7 +18,7 @@ terraform {
 #
 
 locals {
-  environment                  = var.environment != null ? var.environment : lower(local.iam_username)
+  environment          = var.environment != null ? var.environment : lower(local.iam_username)
   maintainer           = var.maintainer != null ? var.maintainer : local.environment
   prefix               = "${local.environment}-ipfs-cluster"
   iam_username         = element(reverse(split("/", data.aws_caller_identity.current.arn)), 0)
@@ -29,10 +29,10 @@ locals {
 
   tags = merge(
     {
-      Environment        = local.environment
-      Maintainer = local.maintainer
-      ManagedBy  = "Terrafrom"
-      DoNotEdit  = "This resource is managed by Terraform. Do not edit manually. Contact the maintainer to request changes."
+      Environment = local.environment
+      Maintainer  = local.maintainer
+      ManagedBy   = "Terrafrom"
+      DoNotEdit   = "This resource is managed by Terraform. Do not edit manually. Contact the maintainer to request changes."
     },
     var.tags == null ? var.tags : {},
     {
@@ -194,10 +194,10 @@ resource "null_resource" "deploy_secrets" {
 
   triggers = {
     instance       = join(" ", tolist(local.node_ips))
-    cluster_secret = random_id.cluster_secret.hex
-    node_identity  = jsonencode(shell_script.node_identity[count.index].output)
-    cert           = "${acme_certificate.this.certificate_pem}${acme_certificate.this.issuer_pem}"
-    key            = acme_certificate.this.private_key_pem
+    cluster_secret = sha256(random_id.cluster_secret.hex)
+    node_identity  = sha256(jsonencode(shell_script.node_identity[count.index].output))
+    cert           = sha256("${acme_certificate.this.certificate_pem}${acme_certificate.this.issuer_pem}")
+    key            = sha256(acme_certificate.this.private_key_pem)
   }
 
   connection {
@@ -244,12 +244,18 @@ resource "null_resource" "deploy_secrets" {
   }
 }
 
+data "external" "payload" {
+  program = ["bash", "-c", "cd ${path.module}; echo { \\\"hash\\\": \\\"$(nix-hash nix)$(nix-hash nixos)\\\" }"]
+}
+
 # Deploy NixOS
 resource "null_resource" "deploy_nixos" {
   count = length(local.nodes)
 
   triggers = {
-    always = uuid()
+    payload       = data.external.payload.result.hash
+    configuration = sha256(data.null_data_source.configuration[count.index].outputs.content)
+    secrets = null_resource.deploy_secrets[count.index].id
   }
 
   depends_on = [null_resource.deploy_secrets]
@@ -264,8 +270,25 @@ resource "null_resource" "deploy_nixos" {
     destination = "/etc/nixos/configuration.nix"
   }
 
-  provisioner "local-exec" {
-    command = "cd ${path.module} && deploy-nixos root@${local.node_ips[count.index]}"
+  provisioner "remote-exec" {
+    inline = ["mkdir -p /root/ipfs-cluster-aws"]
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/nix"
+    destination = "/root/ipfs-cluster-aws"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/nixos"
+    destination = "/root/ipfs-cluster-aws"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "nixos-rebuild build --show-trace > /dev/null",
+      "nixos-rebuild switch --show-trace -j 1",
+    ]
   }
 }
 
@@ -276,7 +299,7 @@ data "null_data_source" "configuration" {
     {
       imports = [ /root/ipfs-cluster-aws/nixos/ipfs-cluster-aws.nix ];
 
-      networking.hostName = "${local.environment}-ipfs-cluster-node${count.index}";
+      networking.hostName = "${local.nodes[count.index].node_prefix}";
 
       security.acme.email = "${var.acme_email}";
 

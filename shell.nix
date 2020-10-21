@@ -5,7 +5,7 @@ let
     inherit (pkgs) niv;
 
     terraform = pkgs.terraform_0_13.withPlugins
-      (p: with p; [ acme aws local p.null random shell template tls ]);
+      (p: with p; [ acme aws external local p.null random shell template tls ]);
 
     validate = pkgs.writeTurtleBin "validate" ''
       main = do
@@ -37,7 +37,7 @@ let
         run "niv update"
     '';
   };
-in pkgs.mkShell {
+in pkgs.mkShell rec {
   buildInputs = pkgs.lib.attrValues commands
     ++ (with pkgs; [ ipfs-key openssh rsync ]);
   shellHook = ''
@@ -51,5 +51,5 @@ in pkgs.mkShell {
     set +e
   '';
 
-  passthru = commands;
+  passthru = commands // { inherit buildInputs; };
 }

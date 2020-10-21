@@ -73,10 +73,31 @@ in
       recommendedProxySettings = true;
       recommendedTlsSettings = true;
 
+      appendHttpConfig = ''
+        server_names_hash_bucket_size 128;
+      '';
+
       virtualHosts.ipfs-gateway = {
         serverName = cfg.nodeFqdn;
         forceSSL = true;
         enableACME = true;
+
+        locations."/" = {
+          proxyPass = "http://127.0.0.1:8080";
+          proxyWebsockets = true;
+        };
+      };
+
+      virtualHosts.ipfs-gateway-https = {
+        serverName = lib.escape ["."] "~^(${cfg.fqdn}|${cfg.regionFqdn}|${cfg.nodeFqdn})$";
+        onlySSL = true;
+        sslCertificate = "/var/lib/ssl/cert";
+        sslCertificateKey = "/var/lib/ssl/key";
+
+        listen = [
+          { addr = "0.0.0.0"; port = 443; ssl = true; }
+          { addr = "[::]";    port = 443; ssl = true; }
+        ];
 
         locations."/" = {
           proxyPass = "http://127.0.0.1:8080";
