@@ -27,12 +27,12 @@ Start the deployment:
 nix-shell --run 'terraform apply'
 ```
 
-Read the plan and accept it if you are satisfied. When the deployment is done, read the outputs and rejoice.
+Read the plan and accept it if you are satisfied. When the deployment is done, read the outputs. Access the gateway at https://__your-environment__-ipfs-cluster.__your-domain__/ .
 
 Connect to a server and run some commands:
 
 ```
-ssh root@<node-ip-or-fqdn> -i SECRET/private_key 'ipfs-cluster-ctl peers ls'
+ssh root@<your-environment>-ipfs-cluster-us-east-1-node0 -i SECRET/private_key 'ipfs-cluster-ctl peers ls'
 ```
 
 When you're done, don't forget to destroy the cloud resources so as not to waste power and money:
@@ -56,7 +56,7 @@ nix-shell
 - infrastructure
   - [`main.tf`](main.tf) defines global cloud resources
   - [`regions.tf`](regions.tf) instantiates resources per region
-  - [`ipfs-cluster-aws-region/main.tf`] defines per-region AWS cloud resources (vpc, sg, acl, ec2, ebs, r53, etc.), ie. a network of cloud servers running NixOS
+  - [`ipfs-cluster-aws-region/main.tf`](ipfs-cluster-aws-region/main.tf) defines per-region AWS cloud resources (vpc, sg, acl, ec2, ebs, r53, etc.), ie. a network of cloud servers running NixOS
 - operating sysem configuration
   - [`nixos/ipfs-cluster-aws.nix`](nixos/ipfs-cluster-aws.nix) is a NixOS profile for running an `ipfs-cluster` node on AWS EC2 with required services and configuration
   - [`nixos/ipfs-cluster.nix`](nixos/ipfs-cluster.nix) is a NixOS module for configuring and running the `ipfs-cluster` service
