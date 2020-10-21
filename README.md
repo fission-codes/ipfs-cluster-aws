@@ -32,7 +32,7 @@ Read the plan and accept it if you are satisfied. When the deployment is done, r
 Connect to a server and run some commands:
 
 ```
-ssh root@<your-environment>-ipfs-cluster-us-east-1-node0 -i SECRET/private_key 'ipfs-cluster-ctl peers ls'
+ssh root@<your-environment>-ipfs-cluster-us-east-1-node0.<your-domain> -i SECRET/private_key 'ipfs-cluster-ctl peers ls'
 ```
 
 When you're done, don't forget to destroy the cloud resources so as not to waste power and money:
