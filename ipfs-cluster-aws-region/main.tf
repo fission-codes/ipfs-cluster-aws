@@ -91,7 +91,7 @@ resource "aws_security_group" "this" {
     from_port        = 5001
     to_port          = 5001
     protocol         = "tcp"
-    cidr_blocks      = ["172.31.0.0/16"]
+    cidr_blocks      = [var.api_cidr_block]
   }
 
   ingress {
@@ -99,7 +99,7 @@ resource "aws_security_group" "this" {
     from_port        = 9095
     to_port          = 9095
     protocol         = "tcp"
-    cidr_blocks      = ["172.31.0.0/16"]
+    cidr_blocks      = [var.api_cidr_block]
   }
 
   ingress {

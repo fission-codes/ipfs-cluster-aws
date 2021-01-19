@@ -155,6 +155,8 @@ in
       enable = true;
       emptyRepo = true;
 
+      apiAddress = "/ip4/0.0.0.0/tcp/5001";
+
       swarmAddress = [
         "/ip4/0.0.0.0/tcp/4001"
         "/ip6/::/tcp/4001"
