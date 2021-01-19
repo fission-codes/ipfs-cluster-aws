@@ -55,6 +55,8 @@ in
           443 # IPFS gateway https
           4001 # IPFS swarm TCPACME
           4003 # IPFS swarm Secure Websocket
+          5001 # IPFS HTTP API
+          9095 # IPFS Cluster HTTP API
           9096 # IPFS Cluster swarm
         ];
         allowedUDPPorts = [
@@ -164,7 +166,7 @@ in
 
       extraConfig = {
         Datastore = {
-          StorageMax = "100GB";
+          StorageMax = "10000GB";
           Spec = {
             type = "mount";
             mounts = [
