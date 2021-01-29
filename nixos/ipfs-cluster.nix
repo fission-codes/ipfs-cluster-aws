@@ -84,6 +84,7 @@ in
       preStart = mkIf (cfg.identityFile != null) ''
         if [ ! -f "${cfg.dataDir}/identity.json" ]; then
           cp "${cfg.identityFile}" "${cfg.dataDir}/identity.json"
+          sed -i 's/127.0.0.1\/tcp\/9094/0.0.0.0\/tcp\/9094/g' ${cfg.dataDir}/service.json
         fi
       '';
 

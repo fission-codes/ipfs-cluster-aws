@@ -57,7 +57,7 @@ in
           4002 # IPFS swarm Websocket
           4003 # IPFS swarm Secure Websocket
           5001 # IPFS HTTP API
-          9095 # IPFS Cluster HTTP API
+          9094 # IPFS Cluster HTTP API
           9096 # IPFS Cluster swarm
         ];
         allowedUDPPorts = [
