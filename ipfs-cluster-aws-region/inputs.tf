@@ -36,3 +36,8 @@ variable "volume_size" {
   type        = number
   default     = 50
 }
+
+variable "api_cidr_block" {
+  description = "CIDR Block of Web API that can access IPFS HTTP API"
+  type        = string
+}

@@ -175,25 +175,27 @@ provider "aws" {
 
 
 module "ipfs-cluster-aws-region-us-east-1" {
-  providers     = { aws = aws.us-east-1 }
-  nodes         = local.region_nodes_map["us-east-1"]
-  region_fqdn   = local.region_map["us-east-1"].region_fqdn
-  tags          = merge(local.tags, { Name = local.region_map["us-east-1"].region_prefix })
-  source        = "./ipfs-cluster-aws-region"
-  public_key    = local.public_key
-  instance_type = var.instance_type
-  volume_size   = var.volume_size
-  fqdn          = local.fqdn
+  providers      = { aws = aws.us-east-1 }
+  nodes          = local.region_nodes_map["us-east-1"]
+  region_fqdn    = local.region_map["us-east-1"].region_fqdn
+  tags           = merge(local.tags, { Name = local.region_map["us-east-1"].region_prefix })
+  source         = "./ipfs-cluster-aws-region"
+  public_key     = local.public_key
+  instance_type  = var.instance_type
+  volume_size    = var.volume_size
+  fqdn           = local.fqdn
+  api_cidr_block = var.api_cidr_block
 }
 
 module "ipfs-cluster-aws-region-eu-north-1" {
-  providers     = { aws = aws.eu-north-1 }
-  nodes         = local.region_nodes_map["eu-north-1"]
-  region_fqdn   = local.region_map["eu-north-1"].region_fqdn
-  tags          = merge(local.tags, { Name = local.region_map["eu-north-1"].region_prefix })
-  source        = "./ipfs-cluster-aws-region"
-  instance_type = var.instance_type
-  public_key    = local.public_key
-  volume_size   = var.volume_size
-  fqdn          = local.fqdn
+  providers      = { aws = aws.eu-north-1 }
+  nodes          = local.region_nodes_map["eu-north-1"]
+  region_fqdn    = local.region_map["eu-north-1"].region_fqdn
+  tags           = merge(local.tags, { Name = local.region_map["eu-north-1"].region_prefix })
+  source         = "./ipfs-cluster-aws-region"
+  instance_type  = var.instance_type
+  public_key     = local.public_key
+  volume_size    = var.volume_size
+  fqdn           = local.fqdn
+  api_cidr_block = var.api_cidr_block
 }

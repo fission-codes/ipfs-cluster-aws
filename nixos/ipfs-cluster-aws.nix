@@ -54,7 +54,10 @@ in
           80 # HTTP ACME and redirect to :443
           443 # IPFS gateway https
           4001 # IPFS swarm TCPACME
+          4002 # IPFS swarm Websocket
           4003 # IPFS swarm Secure Websocket
+          5001 # IPFS HTTP API
+          9095 # IPFS Cluster HTTP API
           9096 # IPFS Cluster swarm
         ];
         allowedUDPPorts = [
@@ -153,18 +156,20 @@ in
       enable = true;
       emptyRepo = true;
 
+      apiAddress = "/ip4/0.0.0.0/tcp/5001";
+
       swarmAddress = [
         "/ip4/0.0.0.0/tcp/4001"
         "/ip6/::/tcp/4001"
         "/ip4/0.0.0.0/udp/4001/quic"
         "/ip6/::/udp/4001/quic"
-        "/ip4/127.0.0.1/tcp/4002/ws"
+        "/ip4/0.0.0.0/tcp/4002/ws"
         "/ip6/::1/tcp/4002/ws"
       ];
 
       extraConfig = {
         Datastore = {
-          StorageMax = "100GB";
+          StorageMax = "10000GB";
           Spec = {
             type = "mount";
             mounts = [

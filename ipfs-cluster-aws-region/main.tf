@@ -87,6 +87,22 @@ resource "aws_security_group" "this" {
   }
 
   ingress {
+    description      = "Allow inbound IPFS HTTP requests from Web API"
+    from_port        = 5001
+    to_port          = 5001
+    protocol         = "tcp"
+    cidr_blocks      = [var.api_cidr_block]
+  }
+
+  ingress {
+    description      = "Allow inbound IPFS Cluster HTTP requests from Web API"
+    from_port        = 9095
+    to_port          = 9095
+    protocol         = "tcp"
+    cidr_blocks      = [var.api_cidr_block]
+  }
+
+  ingress {
     description = "Allow inbound ICMP"
     protocol    = "icmp"
     from_port   = -1

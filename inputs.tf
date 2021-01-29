@@ -47,6 +47,11 @@ variable "subdomain" {
   default     = null
 }
 
+variable "api_cidr_block" {
+  description = "CIDR Block of Web API that can access IPFS HTTP API"
+  type        = string
+}
+
 variable "acme_email" {
   description = "Email address where Let's Encrypt can contact you regarding ACME certificates."
   type        = string
