@@ -57,6 +57,12 @@ variable "acme_email" {
   type        = string
 }
 
+variable "acme_url" {
+  description = "ACME URL that Let's Encrypt uses for SSL certificates"
+  type        = string
+  default     = "https://acme-v02.api.letsencrypt.org/directory"
+}
+
 variable "tags" {
   description = "Tags to use for resources. Name will be overwritten."
   type        = map(string)

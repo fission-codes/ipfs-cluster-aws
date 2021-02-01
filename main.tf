@@ -129,7 +129,7 @@ resource "aws_route53_record" "nodes" {
 #
 
 provider "acme" {
-  server_url = "https://acme-v02.api.letsencrypt.org/directory"
+  server_url = var.acme_url
 }
 
 resource "tls_private_key" "https" {

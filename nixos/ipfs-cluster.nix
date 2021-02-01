@@ -84,7 +84,6 @@ in
       preStart = mkIf (cfg.identityFile != null) ''
         if [ ! -f "${cfg.dataDir}/identity.json" ]; then
           cp "${cfg.identityFile}" "${cfg.dataDir}/identity.json"
-          sed -i 's/127.0.0.1\/tcp\/9094/0.0.0.0\/tcp\/9094/g' ${cfg.dataDir}/service.json
         fi
       '';
 
@@ -109,6 +108,10 @@ in
     systemd.services.ipfs-cluster = {
       description = "ipfs-cluster daemon";
       path = [ "/run/wrappers" pkgs.ipfs-cluster ];
+
+      preStart = ''
+        sed -i 's/127.0.0.1\/tcp\/9094/0.0.0.0\/tcp\/9094/g' "${cfg.dataDir}/service.json"
+      '';
 
       environment = { IPFS_CLUSTER_PATH = cfg.dataDir; } // cfg.extraEnv;
 
