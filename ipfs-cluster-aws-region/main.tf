@@ -15,6 +15,10 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
+data "aws_s3_bucket" "datastore" {
+  bucket = var.s3_bucket_id
+}
+
 # Look up NixOS machine image.
 module "ami" {
   source  = "git::https://github.com/tweag/terraform-nixos//aws_image_nixos?ref=fa6ba97b51873817b279840dcb619725ea9793ac"
@@ -24,14 +28,6 @@ module "ami" {
 #
 # Resources
 #
-
-resource "aws_s3_bucket" "this" {
-  bucket_prefix = "${local.name}-"
-  acl           = "private"
-  tags          = var.tags
-
-  force_destroy = lookup(var.tags, "Environment", "") != "production"
-}
 
 resource "aws_vpc" "this" {
   cidr_block                       = "10.0.0.0/16"
@@ -194,11 +190,14 @@ resource "aws_instance" "this" {
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.this[count.index].id
   vpc_security_group_ids      = [aws_security_group.this.id]
-  depends_on                  = [aws_route_table_association.this, aws_security_group.this, aws_s3_bucket.this]
+  depends_on                  = [aws_route_table_association.this, aws_security_group.this]
   associate_public_ip_address = true
   key_name                    = aws_key_pair.this.key_name
   iam_instance_profile        = aws_iam_instance_profile.this.name
   tags                        = merge(var.tags, { Name = var.nodes[count.index].node_prefix })
+
+  # add other public keys to authorized
+  user_data                   = "echo ${join("\n", var.authorized_keys)} >> /root/.ssh/authorized_keys"
 
   root_block_device {
     volume_size = var.volume_size
@@ -248,7 +247,7 @@ resource "aws_iam_role_policy" "this" {
             "s3:ListBucket"
           ],
         "Resource": [
-            "arn:aws:s3:::${aws_s3_bucket.this.id}"
+            "arn:aws:s3:::${data.aws_s3_bucket.datastore.id}"
           ]
         },
         {
@@ -260,7 +259,7 @@ resource "aws_iam_role_policy" "this" {
             "s3:PutObjectAcl"
           ],
           "Resource": [
-            "arn:aws:s3:::${aws_s3_bucket.this.id}/*"
+            "arn:aws:s3:::${data.aws_s3_bucket.datastore.id}/*"
           ]
         }
       ]
@@ -277,5 +276,5 @@ output "node_ips" {
 }
 
 output "bucket_names" {
-  value = [for x in range(length(var.nodes)) : aws_s3_bucket.this.id]
+  value = [for x in range(length(var.nodes)) : data.aws_s3_bucket.datastore.id]
 }

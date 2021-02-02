@@ -30,6 +30,12 @@ variable "public_key" {
   default     = null
 }
 
+variable "authorized_keys" {
+  description = "List of public keys to grant ssh access to nodes."
+  type        = list(string)
+  default     = []
+}
+
 variable "volume_size" {
   description = "Size of root volumes in GB."
   type        = number
@@ -67,4 +73,14 @@ variable "tags" {
   description = "Tags to use for resources. Name will be overwritten."
   type        = map(string)
   default     = null
+}
+
+variable "gateway_urls" {
+  description = "Top level Gateway URL to add to SSL certificate"
+  type        = list(string)
+}
+
+variable "s3_bucket_ids" {
+  description = "Map from AWS regions to number of ipfs-cluster nodes."
+  type        = map(string)
 }

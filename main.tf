@@ -144,9 +144,9 @@ resource "acme_registration" "this" {
 resource "acme_certificate" "this" {
   account_key_pem = acme_registration.this.account_key_pem
   common_name     = local.fqdn
-  subject_alternative_names = [
+  subject_alternative_names = concat(var.gateway_urls, [
     for n in local.nodes : n.node_fqdn
-  ]
+  ])
   recursive_nameservers = data.aws_route53_zone.this.name_servers
 
   dns_challenge {

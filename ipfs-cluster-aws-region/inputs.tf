@@ -31,6 +31,12 @@ variable "public_key" {
   type        = string
 }
 
+variable "authorized_keys" {
+  description = "List of public keys to grant ssh access to nodes."
+  type        = list(string)
+  default     = []
+}
+
 variable "volume_size" {
   description = "Size of root volumes in GB."
   type        = number
@@ -38,6 +44,11 @@ variable "volume_size" {
 }
 
 variable "api_cidr_block" {
+  description = "CIDR Block of Web API that can access IPFS HTTP API"
+  type        = string
+}
+
+variable "s3_bucket_id" {
   description = "CIDR Block of Web API that can access IPFS HTTP API"
   type        = string
 }
