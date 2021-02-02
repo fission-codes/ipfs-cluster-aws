@@ -26,7 +26,7 @@ locals {
   public_key           = local.generate_private_key ? tls_private_key.deploy[0].public_key_openssh : var.public_key
   subdomain            = var.subdomain != null ? var.subdomain : local.prefix
   fqdn                 = "${local.subdomain}.${var.domain}"
-
+           
   tags = merge(
     {
       Environment = local.environment
@@ -59,6 +59,10 @@ locals {
 
   region_map       = { for r in local.regions : r.region_name => r }
   region_nodes_map = { for r in local.regions : r.region_name => [for n in local.nodes : n if n.region_name == r.region_name] }
+
+  cert_domains = concat(var.gateway_urls, [
+    for n in local.nodes : n.node_fqdn
+  ])
 }
 
 #
@@ -144,9 +148,7 @@ resource "acme_registration" "this" {
 resource "acme_certificate" "this" {
   account_key_pem = acme_registration.this.account_key_pem
   common_name     = local.fqdn
-  subject_alternative_names = concat(var.gateway_urls, [
-    for n in local.nodes : n.node_fqdn
-  ])
+  subject_alternative_names = local.cert_domains
   recursive_nameservers = data.aws_route53_zone.this.name_servers
 
   dns_challenge {
@@ -313,6 +315,7 @@ data "null_data_source" "configuration" {
         enable = true;
         region = "${local.nodes[count.index].region_name}";
         bucket = "${local.bucket_names[count.index]}";
+        gatewayUrls = "${join("|", var.gateway_urls)}";
         nodeFqdn = "${local.nodes[count.index].node_fqdn}";
         regionFqdn = "${local.nodes[count.index].region_fqdn}";
         fqdn = "${local.fqdn}";
@@ -345,4 +348,8 @@ output "node_fqdns" {
 
 output "fqdn" {
   value = local.fqdn
+}
+
+output "cert_domains" {
+  value = local.cert_domains
 }

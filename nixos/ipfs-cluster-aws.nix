@@ -92,7 +92,7 @@ in
       };
 
       virtualHosts.ipfs-gateway-https = {
-        serverName = lib.escape ["."] "~^(${cfg.fqdn}|${cfg.regionFqdn}|${cfg.nodeFqdn})$";
+        serverName = lib.escape ["."] "~^(${cfg.fqdn}|${cfg.regionFqdn}|${cfg.nodeFqdn}|${cfg.gatewayUrls})$";
         onlySSL = true;
         sslCertificate = "/var/lib/ssl/cert";
         sslCertificateKey = "/var/lib/ssl/key";
@@ -109,7 +109,7 @@ in
       };
 
       virtualHosts.ipfs-swarm-wss = {
-        serverName = lib.escape ["."] "~^(${cfg.fqdn}|${cfg.regionFqdn}|${cfg.nodeFqdn})$";
+        serverName = lib.escape ["."] "~^(${cfg.fqdn}|${cfg.regionFqdn}|${cfg.nodeFqdn}|${cfg.gatewayUrls})$";
         onlySSL = true;
         sslCertificate = "/var/lib/ssl/cert";
         sslCertificateKey = "/var/lib/ssl/key";
