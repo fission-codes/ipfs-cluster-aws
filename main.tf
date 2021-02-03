@@ -59,10 +59,6 @@ locals {
 
   region_map       = { for r in local.regions : r.region_name => r }
   region_nodes_map = { for r in local.regions : r.region_name => [for n in local.nodes : n if n.region_name == r.region_name] }
-
-  # cert_domains = concat(var.gateway_urls, [
-  #   for n in local.nodes : n.node_fqdn
-  # ])
 }
 
 #

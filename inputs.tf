@@ -75,11 +75,6 @@ variable "tags" {
   default     = null
 }
 
-variable "gateway_urls" {
-  description = "Top level Gateway URL to add to SSL certificate"
-  type        = list(string)
-}
-
 variable "s3_bucket_ids" {
   description = "Map from AWS regions to number of ipfs-cluster nodes."
   type        = map(string)
