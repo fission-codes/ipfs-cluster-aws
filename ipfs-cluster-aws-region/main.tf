@@ -151,6 +151,15 @@ resource "aws_security_group" "this" {
   }
 
   ingress {
+    description      = "Allow inbound IPFS swarm Websocket"
+    from_port        = 4002
+    to_port          = 4002
+    protocol         = "tcp"
+    cidr_blocks      = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  ingress {
     description      = "Allow inbound IPFS swarm Secure Websocket"
     from_port        = 4003
     to_port          = 4003
@@ -195,9 +204,6 @@ resource "aws_instance" "this" {
   key_name                    = aws_key_pair.this.key_name
   iam_instance_profile        = aws_iam_instance_profile.this.name
   tags                        = merge(var.tags, { Name = var.nodes[count.index].node_prefix })
-
-  # add other public keys to authorized
-  user_data                   = "echo ${join("\n", var.authorized_keys)} >> /root/.ssh/authorized_keys"
 
   root_block_device {
     volume_size = var.volume_size
