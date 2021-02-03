@@ -181,7 +181,6 @@ module "ipfs-cluster-aws-region-us-east-1" {
   tags            = merge(local.tags, { Name = local.region_map["us-east-1"].region_prefix })
   source          = "./ipfs-cluster-aws-region"
   public_key      = local.public_key
-  authorized_keys = var.authorized_keys
   instance_type   = var.instance_type
   volume_size     = var.volume_size
   fqdn            = local.fqdn
@@ -197,7 +196,6 @@ module "ipfs-cluster-aws-region-eu-north-1" {
   source          = "./ipfs-cluster-aws-region"
   instance_type   = var.instance_type
   public_key      = local.public_key
-  authorized_keys = var.authorized_keys
   volume_size     = var.volume_size
   fqdn            = local.fqdn
   api_cidr_block  = var.api_cidr_block

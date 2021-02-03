@@ -31,12 +31,6 @@ variable "public_key" {
   type        = string
 }
 
-variable "authorized_keys" {
-  description = "List of public keys to grant ssh access to nodes."
-  type        = list(string)
-  default     = []
-}
-
 variable "volume_size" {
   description = "Size of root volumes in GB."
   type        = number

@@ -24,19 +24,9 @@ in
       description = "Name of AWS S3 bucket to use as data store.";
     };
 
-    nodeFqdn = mkOption {
+    domain = mkOption {
       type = str;
-      description = "Fully qualified domain name assigned to node, for setting up IPFS gateway and swarm TLS via ACME.";
-    };
-
-    regionFqdn = mkOption {
-      type = str;
-      description = "Fully qualified domain name assigned to region, for setting up IPFS gateway and swarm TLS";
-    };
-
-    fqdn = mkOption {
-      type = str;
-      description = "Fully qualified domain name assigned to cluster, for setting up IPFS gateway and swarm TLS";
+      description = "Root domain for TLS ACME Certs";
     };
   };
 
@@ -81,9 +71,11 @@ in
       '';
 
       virtualHosts.ipfs-gateway = {
-        serverName = cfg.nodeFqdn;
+        serverName = "${cfg.domain}";
+        serverAliases = ["*.${cfg.domain}"];
         forceSSL = true;
-        enableACME = true;
+        sslCertificate = "/var/lib/ssl/cert";
+        sslCertificateKey = "/var/lib/ssl/key";
 
         locations."/" = {
           proxyPass = "http://127.0.0.1:8080";
@@ -92,7 +84,8 @@ in
       };
 
       virtualHosts.ipfs-gateway-https = {
-        serverName = lib.escape ["."] "~^(${cfg.fqdn}|${cfg.regionFqdn}|${cfg.nodeFqdn}|${cfg.gatewayUrls})$";
+        serverName = "${cfg.domain}";
+        serverAliases = ["*.${cfg.domain}"];
         onlySSL = true;
         sslCertificate = "/var/lib/ssl/cert";
         sslCertificateKey = "/var/lib/ssl/key";
@@ -109,7 +102,8 @@ in
       };
 
       virtualHosts.ipfs-swarm-wss = {
-        serverName = lib.escape ["."] "~^(${cfg.fqdn}|${cfg.regionFqdn}|${cfg.nodeFqdn}|${cfg.gatewayUrls})$";
+        serverName = "${cfg.domain}";
+        serverAliases = ["*.${cfg.domain}"];
         onlySSL = true;
         sslCertificate = "/var/lib/ssl/cert";
         sslCertificateKey = "/var/lib/ssl/key";
