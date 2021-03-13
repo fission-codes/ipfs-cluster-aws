@@ -3,24 +3,24 @@
         "branch": "with-s3",
         "description": "IPFS implementation in Go",
         "homepage": "https://ipfs.io",
-        "owner": "brainrape",
+        "owner": "fission-suite",
         "repo": "go-ipfs",
         "rev": "391e29d7f6f64300055d88c9385222f7619525ed",
         "sha256": "066a0wcjvfg9m2a3kz4kz1vbr1xnr812fq57417d7hcjp5ca2x83",
         "type": "tarball",
-        "url": "https://github.com/brainrape/go-ipfs/archive/391e29d7f6f64300055d88c9385222f7619525ed.tar.gz",
+        "url": "https://github.com/fission-suite/go-ipfs/archive/391e29d7f6f64300055d88c9385222f7619525ed.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "ipfs-key": {
         "branch": "master",
         "description": "A program to generate ipfs private keys",
         "homepage": null,
-        "owner": "brainrape",
+        "owner": "fission-suite",
         "repo": "ipfs-key",
         "rev": "9171388a3ecfc41966e13a9a56745b3b2eda0463",
         "sha256": "195h3n38b9cnq3r5fip2nwkqwnhws45s8rc17j92sa3snf8nxygc",
         "type": "tarball",
-        "url": "https://github.com/brainrape/ipfs-key/archive/9171388a3ecfc41966e13a9a56745b3b2eda0463.tar.gz",
+        "url": "https://github.com/fission-suite/ipfs-key/archive/9171388a3ecfc41966e13a9a56745b3b2eda0463.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "niv": {

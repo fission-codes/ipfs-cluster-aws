@@ -6,30 +6,6 @@ let
   cfg = config.services.ipfs-cluster-aws;
 in
 {
-  imports = [
-    <nixpkgs/nixos/modules/virtualisation/amazon-image.nix>
-    ./ipfs-cluster.nix
-  ];
-
-  options.services.ipfs-cluster-aws = with types; {
-    enable = mkEnableOption "Configuration for running IPFS Cluster on AWS";
-
-    region = mkOption {
-      type = str;
-      description = "AWS region where S3 bucket is hosted.";
-    };
-
-    bucket = mkOption {
-      type = str;
-      description = "Name of AWS S3 bucket to use as data store.";
-    };
-
-    domain = mkOption {
-      type = str;
-      description = "Root domain for TLS ACME Certs";
-    };
-  };
-
   config = mkIf cfg.enable {
     nixpkgs.overlays = [ (import ../nix/overlay.nix) ];
 
@@ -207,15 +183,5 @@ in
         };
       };
     };
-
-    services.ipfs-cluster = {
-      enable = false;
-      identityFile = "/root/SECRET_identity.json";
-    };
-
-    systemd.services.ipfs-cluster.enable = false;
-
-    systemd.services.ipfs-cluster-init.serviceConfig.EnvironmentFile = "/root/SECRET_ipfs-cluster";
-    systemd.services.ipfs-cluster.serviceConfig.EnvironmentFile = "/root/SECRET_ipfs-cluster";
   };
 }
