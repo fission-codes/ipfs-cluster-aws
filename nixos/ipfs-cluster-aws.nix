@@ -47,6 +47,7 @@ in
           4002 # IPFS swarm Websocket
           4003 # IPFS swarm Secure Websocket
           5001 # IPFS HTTP API
+          8080 # IPFS Gateway
           9094 # IPFS Cluster HTTP API
           9096 # IPFS Cluster swarm
         ];
@@ -151,6 +152,7 @@ in
       emptyRepo = true;
 
       apiAddress = "/ip4/0.0.0.0/tcp/5001";
+      gatewayAddress = "/ip4/0.0.0.0/tcp/8080";
 
       swarmAddress = [
         "/ip4/0.0.0.0/tcp/4001"
@@ -192,6 +194,9 @@ in
               }
             ];
           };
+        };
+        Gateway = {
+          NoFetch = false;
         };
       };
     };
