@@ -8,7 +8,6 @@ in
 {
   imports = [
     <nixpkgs/nixos/modules/virtualisation/amazon-image.nix>
-    ./ipfs-cluster.nix
   ];
 
   options.services.ipfs-cluster-aws = with types; {
@@ -196,17 +195,9 @@ in
           };
         };
         Gateway = {
-          NoFetch = false;
+          NoFetch = true;
         };
       };
     };
-
-    services.ipfs-cluster = {
-      enable = true;
-      identityFile = "/root/SECRET_identity.json";
-    };
-
-    systemd.services.ipfs-cluster-init.serviceConfig.EnvironmentFile = "/root/SECRET_ipfs-cluster";
-    systemd.services.ipfs-cluster.serviceConfig.EnvironmentFile = "/root/SECRET_ipfs-cluster";
   };
 }
