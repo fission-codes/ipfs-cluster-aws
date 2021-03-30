@@ -6,6 +6,29 @@ let
   cfg = config.services.ipfs-cluster-aws;
 in
 {
+  imports = [
+    <nixpkgs/nixos/modules/virtualisation/amazon-image.nix>
+  ];
+
+  options.services.ipfs-cluster-aws = with types; {
+    enable = mkEnableOption "Configuration for running IPFS Cluster on AWS";
+
+    region = mkOption {
+      type = str;
+      description = "AWS region where S3 bucket is hosted.";
+    };
+
+    bucket = mkOption {
+      type = str;
+      description = "Name of AWS S3 bucket to use as data store.";
+    };
+
+    domain = mkOption {
+      type = str;
+      description = "Root domain for TLS ACME Certs";
+    };
+  };
+  
   config = mkIf cfg.enable {
     nixpkgs.overlays = [ (import ../nix/overlay.nix) ];
 
@@ -184,7 +207,7 @@ in
           };
         };
         Gateway = {
-          NoFetch = false;
+          NoFetch = true;
         };
       };
     };
