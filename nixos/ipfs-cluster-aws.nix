@@ -6,30 +6,6 @@ let
   cfg = config.services.ipfs-cluster-aws;
 in
 {
-  imports = [
-    <nixpkgs/nixos/modules/virtualisation/amazon-image.nix>
-    ./ipfs-cluster.nix
-  ];
-
-  options.services.ipfs-cluster-aws = with types; {
-    enable = mkEnableOption "Configuration for running IPFS Cluster on AWS";
-
-    region = mkOption {
-      type = str;
-      description = "AWS region where S3 bucket is hosted.";
-    };
-
-    bucket = mkOption {
-      type = str;
-      description = "Name of AWS S3 bucket to use as data store.";
-    };
-
-    domain = mkOption {
-      type = str;
-      description = "Root domain for TLS ACME Certs";
-    };
-  };
-
   config = mkIf cfg.enable {
     nixpkgs.overlays = [ (import ../nix/overlay.nix) ];
 
@@ -121,6 +97,18 @@ in
       };
     };
 
+    services.cron = {
+      enable = true;
+      systemCronJobs = [
+        "0 9 * * *      root    systemctl restart ipfs"
+        "* * * * *      root    ipfs swarm connect /dns4/production-ipfs-cluster-us-east-1-node0.runfission.com/tcp/4001/p2p/12D3KooWFSAbpiAeKHnVyqMqrdvAtu8C3veePHi36bZGNM2qv42q"
+        "* * * * *      root    ipfs swarm connect /dns4/production-ipfs-cluster-us-east-1-node1.runfission.com/tcp/4001/p2p/12D3KooWNntMEXRUa2dNgkQsVgzao6zGSYxm1oAs83YtRy6uBuxv"
+        "* * * * *      root    ipfs swarm connect /dns4/production-ipfs-cluster-us-east-1-node2.runfission.com/tcp/4001/p2p/12D3KooWQ2hL9NschcJ1Suqa1TybJc2ZaacqoQMBT3ziFC7Ye2BZ"
+        "* * * * *      root    ipfs swarm connect /dns4/production-ipfs-cluster-eu-north-1-node0.runfission.com/tcp/4001/p2p/12D3KooWDTUTdVJfW7Rwb6kKhceEwevTatPXnavPwkfZp2A6r1Fn"
+        "* * * * *      root    ipfs swarm connect /dns4/production-ipfs-cluster-eu-north-1-node1.runfission.com/tcp/4001/p2p/12D3KooWRwbRrSN2cPAKz4yt1vxBFdh53CpgWjSFK5hZPkzHHz5h"
+      ];
+    };
+
     systemd.services.ipfs-init = {
       unitConfig.PartOf = [ "ipfs.service" ];
       postStart = let
@@ -200,13 +188,5 @@ in
         };
       };
     };
-
-    services.ipfs-cluster = {
-      enable = true;
-      identityFile = "/root/SECRET_identity.json";
-    };
-
-    systemd.services.ipfs-cluster-init.serviceConfig.EnvironmentFile = "/root/SECRET_ipfs-cluster";
-    systemd.services.ipfs-cluster.serviceConfig.EnvironmentFile = "/root/SECRET_ipfs-cluster";
   };
 }
