@@ -32,6 +32,11 @@ in
       type = str;
       description = "Full domain for node";
     };
+
+    crons = mkOption {
+      type = listOf str;
+      description = "List of cronjobs";
+    };
   };
   
   config = mkIf cfg.enable {
@@ -95,14 +100,7 @@ in
 
     services.cron = {
       enable = true;
-      systemCronJobs = [
-        "0 9 * * *      root    systemctl restart ipfs"
-        "* * * * *      root    ipfs swarm connect /dns4/production-ipfs-cluster-us-east-1-node0.runfission.com/tcp/4001/p2p/12D3KooWFSAbpiAeKHnVyqMqrdvAtu8C3veePHi36bZGNM2qv42q"
-        "* * * * *      root    ipfs swarm connect /dns4/production-ipfs-cluster-us-east-1-node1.runfission.com/tcp/4001/p2p/12D3KooWNntMEXRUa2dNgkQsVgzao6zGSYxm1oAs83YtRy6uBuxv"
-        "* * * * *      root    ipfs swarm connect /dns4/production-ipfs-cluster-us-east-1-node2.runfission.com/tcp/4001/p2p/12D3KooWQ2hL9NschcJ1Suqa1TybJc2ZaacqoQMBT3ziFC7Ye2BZ"
-        "* * * * *      root    ipfs swarm connect /dns4/production-ipfs-cluster-eu-north-1-node0.runfission.com/tcp/4001/p2p/12D3KooWDTUTdVJfW7Rwb6kKhceEwevTatPXnavPwkfZp2A6r1Fn"
-        "* * * * *      root    ipfs swarm connect /dns4/production-ipfs-cluster-eu-north-1-node1.runfission.com/tcp/4001/p2p/12D3KooWRwbRrSN2cPAKz4yt1vxBFdh53CpgWjSFK5hZPkzHHz5h"
-      ];
+      systemCronJobs = cfg.crons;
     };
 
     systemd.services.ipfs-init = {
