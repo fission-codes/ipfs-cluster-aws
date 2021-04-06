@@ -27,6 +27,11 @@ in
       type = str;
       description = "Root domain for TLS ACME Certs";
     };
+
+    fqdn = mkOption {
+      type = str;
+      description = "Full domain for node";
+    };
   };
   
   config = mkIf cfg.enable {
@@ -57,6 +62,7 @@ in
     };
 
     security.acme.acceptTerms = true;
+    security.acme.email = "support@fission.codes";
 
     services.openssh.enable = true;
 
@@ -70,43 +76,9 @@ in
         server_names_hash_bucket_size 128;
       '';
 
-      virtualHosts.ipfs-gateway = {
-        serverName = "${cfg.domain}";
-        serverAliases = ["*.${cfg.domain}"];
-        forceSSL = true;
-        sslCertificate = "/var/lib/ssl/cert";
-        sslCertificateKey = "/var/lib/ssl/key";
-
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:8080";
-          proxyWebsockets = true;
-        };
-      };
-
-      virtualHosts.ipfs-gateway-https = {
-        serverName = "${cfg.domain}";
-        serverAliases = ["*.${cfg.domain}"];
-        onlySSL = true;
-        sslCertificate = "/var/lib/ssl/cert";
-        sslCertificateKey = "/var/lib/ssl/key";
-
-        listen = [
-          { addr = "0.0.0.0"; port = 443; ssl = true; }
-          { addr = "[::]";    port = 443; ssl = true; }
-        ];
-
-        locations."/" = {
-          proxyPass = "http://127.0.0.1:8080";
-          proxyWebsockets = true;
-        };
-      };
-
-      virtualHosts.ipfs-swarm-wss = {
-        serverName = "${cfg.domain}";
-        serverAliases = ["*.${cfg.domain}"];
-        onlySSL = true;
-        sslCertificate = "/var/lib/ssl/cert";
-        sslCertificateKey = "/var/lib/ssl/key";
+      virtualHosts."${cfg.fqdn}" = {
+        addSSL = true;
+        enableACME = true;
 
         listen = [
           { addr = "0.0.0.0"; port = 4003; ssl = true; }
@@ -116,6 +88,7 @@ in
         locations."/" = {
           proxyPass = "http://127.0.0.1:4002";
           proxyWebsockets = true;
+          root = "/var/www";
         };
       };
     };

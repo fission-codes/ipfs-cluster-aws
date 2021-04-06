@@ -310,17 +310,12 @@ data "null_data_source" "configuration" {
 
       networking.hostName = "${local.nodes[count.index].node_prefix}";
 
-      security.acme.email = "${var.acme_email}";
-
-      services.ipfs-cluster.bootstrapPeers = [
-        ${join(" ", [for i in range(length(local.nodes)) : "\"/ip4/${local.node_ips[i]}/tcp/9096/ipfs/${shell_script.node_identity[i].output["id"]}\"" if i != count.index])}
-      ];
-
       services.ipfs-cluster-aws = {
         enable = true;
         region = "${local.nodes[count.index].region_name}";
         bucket = "${local.bucket_names[count.index]}";
         domain = "${var.domain}";
+        fqdn   = "${local.nodes[count.index].node_fqdn";
       };
     }
   EOT
