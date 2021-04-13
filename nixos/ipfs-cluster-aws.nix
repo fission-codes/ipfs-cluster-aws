@@ -175,6 +175,11 @@ in
       ];
 
       extraConfig = {
+        API = {
+          HTTPHeaders = {
+            Access-Control-Allow-Origin = ["*"];
+          };
+        };
         Datastore = {
           StorageMax = "10000GB";
           Spec = {
