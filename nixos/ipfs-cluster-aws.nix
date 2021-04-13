@@ -81,6 +81,17 @@ in
         server_names_hash_bucket_size 128;
       '';
 
+      # Even though we don't use port 80/443, we leave this in the nginx config to help out Let's Encrypt
+      virtualHosts.root = {
+        addSSL = true;
+        enableACME = true;
+        serverName = "${cfg.fqdn}";
+
+        locations."/" = {
+          root = "/var/www";
+        };
+      };
+
       virtualHosts."${cfg.fqdn}" = {
         addSSL = true;
         enableACME = true;
