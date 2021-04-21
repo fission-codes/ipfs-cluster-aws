@@ -4,14 +4,14 @@
 
 buildGoModule rec {
   pname = "ipfs";
-  version = "0.7.0";
+  version = "0.8.0";
   rev = "v${version}";
 
   src = (import ./sources.nix).ipfs;
 
   subPackages = [ "cmd/ipfs" ];
 
-  vendorSha256 = "1493a01ckgjmyxr88fk39la5fask4plnl0lajgixhyjzpr6p5hss";
+  vendorSha256 = "1qifcp1mv2fim5csn8g5vdjm88i0sa4n4qzihylli48593mmj3zq";
 
   postInstall = ''
     install --mode=444 -D misc/systemd/ipfs.service $out/etc/systemd/system/ipfs.service

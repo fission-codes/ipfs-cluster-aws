@@ -1,50 +1,50 @@
 {
-    "ipfs": {
-        "branch": "with-s3",
-        "description": "IPFS implementation in Go",
-        "homepage": "https://ipfs.io",
-        "owner": "fission-suite",
-        "repo": "go-ipfs",
-        "rev": "391e29d7f6f64300055d88c9385222f7619525ed",
-        "sha256": "066a0wcjvfg9m2a3kz4kz1vbr1xnr812fq57417d7hcjp5ca2x83",
-        "type": "tarball",
-        "url": "https://github.com/fission-suite/go-ipfs/archive/391e29d7f6f64300055d88c9385222f7619525ed.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "ipfs-key": {
-        "branch": "master",
-        "description": "A program to generate ipfs private keys",
-        "homepage": null,
-        "owner": "fission-suite",
-        "repo": "ipfs-key",
-        "rev": "9171388a3ecfc41966e13a9a56745b3b2eda0463",
-        "sha256": "195h3n38b9cnq3r5fip2nwkqwnhws45s8rc17j92sa3snf8nxygc",
-        "type": "tarball",
-        "url": "https://github.com/fission-suite/ipfs-key/archive/9171388a3ecfc41966e13a9a56745b3b2eda0463.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "niv": {
-        "branch": "master",
-        "description": "Easy dependency management for Nix projects",
-        "homepage": "https://github.com/nmattia/niv",
-        "owner": "nmattia",
-        "repo": "niv",
-        "rev": "9d35b9e4837ab88517210b1701127612c260eccf",
-        "sha256": "0q50xhnm8g2yfyakrh0nly4swyygxpi0a8cb9gp65wcakcgvzvdh",
-        "type": "tarball",
-        "url": "https://github.com/nmattia/niv/archive/9d35b9e4837ab88517210b1701127612c260eccf.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "nixpkgs": {
-        "branch": "nixpkgs-unstable",
-        "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
-        "homepage": "https://github.com/NixOS/nixpkgs",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "cfed29bfcb28259376713005d176a6f82951014a",
-        "sha256": "034m892hxygminkj326y7l3bp4xhx0v154jcmla7wdfqd23dk5xm",
-        "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/cfed29bfcb28259376713005d176a6f82951014a.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    }
+  "ipfs": {
+      "branch": "with-s3",
+      "description": "IPFS implementation in Go",
+      "homepage": "https://ipfs.io",
+      "owner": "fission-suite",
+      "repo": "go-ipfs",
+      "rev": "72c52d0ea145d43124be72c5f1367592320dc0ea",
+      "sha256": "047fr3ahpw8lnj1mjkrkhf1b2vw9687yks45bwrfqb0kaan0045k",
+      "type": "tarball",
+      "url": "https://github.com/fission-suite/go-ipfs/archive/72c52d0ea145d43124be72c5f1367592320dc0ea.tar.gz",
+      "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+  },
+  "ipfs-key": {
+      "branch": "master",
+      "description": "A program to generate ipfs private keys",
+      "homepage": null,
+      "owner": "brainrape",
+      "repo": "ipfs-key",
+      "rev": "9171388a3ecfc41966e13a9a56745b3b2eda0463",
+      "sha256": "195h3n38b9cnq3r5fip2nwkqwnhws45s8rc17j92sa3snf8nxygc",
+      "type": "tarball",
+      "url": "https://github.com/brainrape/ipfs-key/archive/9171388a3ecfc41966e13a9a56745b3b2eda0463.tar.gz",
+      "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+  },
+  "niv": {
+      "branch": "master",
+      "description": "Easy dependency management for Nix projects",
+      "homepage": "https://github.com/nmattia/niv",
+      "owner": "nmattia",
+      "repo": "niv",
+      "rev": "9d35b9e4837ab88517210b1701127612c260eccf",
+      "sha256": "0q50xhnm8g2yfyakrh0nly4swyygxpi0a8cb9gp65wcakcgvzvdh",
+      "type": "tarball",
+      "url": "https://github.com/nmattia/niv/archive/9d35b9e4837ab88517210b1701127612c260eccf.tar.gz",
+      "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+  },
+  "nixpkgs": {
+      "branch": "nixpkgs-unstable",
+      "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
+      "homepage": "https://github.com/NixOS/nixpkgs",
+      "owner": "NixOS",
+      "repo": "nixpkgs",
+      "rev": "d9448c95c5d557d0b2e8bfe13e8865e4b1e3943f",
+      "sha256": "0bs2pjd9ns21m98an5bms49l20kk43gby9h1f5j2n5xk9ykpsr29",
+      "type": "tarball",
+      "url": "https://github.com/NixOS/nixpkgs/archive/d9448c95c5d557d0b2e8bfe13e8865e4b1e3943f.tar.gz",
+      "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+  }
 }
