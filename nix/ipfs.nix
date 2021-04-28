@@ -2,22 +2,27 @@
 
 { stdenv, buildGoModule, fetchurl, nixosTests }:
 
-buildGoModule rec {
-  pname = "ipfs";
+let
   version = "0.8.0";
-  rev = "v${version}";
+  pkgs = import ./sources.nix;
+in 
+  buildGoModule {
+    inherit version;
 
-  src = (import ./sources.nix).ipfs;
+    pname = "ipfs";
+    rev = "v${version}";
 
-  subPackages = [ "cmd/ipfs" ];
+    src = pkgs.ipfs;
 
-  vendorSha256 = "1qifcp1mv2fim5csn8g5vdjm88i0sa4n4qzihylli48593mmj3zq";
+    subPackages = [ "cmd/ipfs" ];
 
-  postInstall = ''
-    install --mode=444 -D misc/systemd/ipfs.service $out/etc/systemd/system/ipfs.service
-    install --mode=444 -D misc/systemd/ipfs-api.socket $out/etc/systemd/system/ipfs-api.socket
-    install --mode=444 -D misc/systemd/ipfs-gateway.socket $out/etc/systemd/system/ipfs-gateway.socket
-    substituteInPlace $out/etc/systemd/system/ipfs.service \
-      --replace /usr/bin/ipfs $out/bin/ipfs
-  '';
-}
+    vendorSha256 = "1qifcp1mv2fim5csn8g5vdjm88i0sa4n4qzihylli48593mmj3zq";
+
+    postInstall = ''
+      install --mode=444 -D misc/systemd/ipfs.service $out/etc/systemd/system/ipfs.service
+      install --mode=444 -D misc/systemd/ipfs-api.socket $out/etc/systemd/system/ipfs-api.socket
+      install --mode=444 -D misc/systemd/ipfs-gateway.socket $out/etc/systemd/system/ipfs-gateway.socket
+      substituteInPlace $out/etc/systemd/system/ipfs.service \
+        --replace /usr/bin/ipfs $out/bin/ipfs
+    '';
+  }
