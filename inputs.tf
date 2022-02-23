@@ -76,6 +76,6 @@ variable "tags" {
 }
 
 variable "s3_bucket_ids" {
-  description = "Map from AWS regions to number of ipfs-cluster nodes."
+  description = "Map from AWS regions to S3 bucket id. Must have the same keys as region_node_counts."
   type        = map(string)
 }
