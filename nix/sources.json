@@ -1,62 +1,62 @@
 {
-  "ipfs": {
-      "branch": "with-s3",
-      "description": "IPFS implementation in Go",
-      "homepage": "https://ipfs.io",
-      "owner": "fission-suite",
-      "repo": "go-ipfs",
-      "rev": "72c52d0ea145d43124be72c5f1367592320dc0ea",
-      "sha256": "047fr3ahpw8lnj1mjkrkhf1b2vw9687yks45bwrfqb0kaan0045k",
-      "type": "tarball",
-      "url": "https://github.com/fission-suite/go-ipfs/archive/72c52d0ea145d43124be72c5f1367592320dc0ea.tar.gz",
-      "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-  },
-  "ipfs-key": {
-      "branch": "master",
-      "description": "A program to generate ipfs private keys",
-      "homepage": null,
-      "owner": "fission-suite",
-      "repo": "ipfs-key",
-      "rev": "9171388a3ecfc41966e13a9a56745b3b2eda0463",
-      "sha256": "195h3n38b9cnq3r5fip2nwkqwnhws45s8rc17j92sa3snf8nxygc",
-      "type": "tarball",
-      "url": "https://github.com/fission-suite/ipfs-key/archive/9171388a3ecfc41966e13a9a56745b3b2eda0463.tar.gz",
-      "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-  },
-  "ipfs-migrator": {
-      "branch": "with-s3-v1",
-      "description": "Migrations for the filesystem repository of ipfs clients",
-      "homepage": "",
-      "owner": "fission-suite",
-      "repo": "fs-repo-migrations",
-      "rev": "8fe6cf6de0861027d36856c4d6e69a885c5aafc2",
-      "sha256": "0xz0i1rlglmv1dzx6fziapikwzcaqph1s3xbhswrhc672yyabjrd",
-      "type": "tarball",
-      "url": "https://github.com/fission-suite/fs-repo-migrations/archive/8fe6cf6de0861027d36856c4d6e69a885c5aafc2.tar.gz",
-      "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-  },
-  "niv": {
-      "branch": "master",
-      "description": "Easy dependency management for Nix projects",
-      "homepage": "https://github.com/nmattia/niv",
-      "owner": "nmattia",
-      "repo": "niv",
-      "rev": "af958e8057f345ee1aca714c1247ef3ba1c15f5e",
-      "sha256": "1qjavxabbrsh73yck5dcq8jggvh3r2jkbr6b5nlz5d9yrqm9255n",
-      "type": "tarball",
-      "url": "https://github.com/nmattia/niv/archive/af958e8057f345ee1aca714c1247ef3ba1c15f5e.tar.gz",
-      "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-  },
-  "nixpkgs": {
-      "branch": "nixpkgs-unstable",
-      "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
-      "homepage": "https://github.com/NixOS/nixpkgs",
-      "owner": "NixOS",
-      "repo": "nixpkgs",
-      "rev": "267761cf44498f9e1aa81dbdb92d77d5873dd9f6",
-      "sha256": "08k5nm9535wmc62hb2hjys6kfvd84g9765kdcslni1bb1qn98f7h",
-      "type": "tarball",
-      "url": "https://github.com/NixOS/nixpkgs/archive/267761cf44498f9e1aa81dbdb92d77d5873dd9f6.tar.gz",
-      "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-  }
+    "ipfs": {
+        "branch": "with-s3",
+        "description": "IPFS implementation in Go",
+        "homepage": "https://ipfs.io",
+        "owner": "fission-suite",
+        "repo": "go-ipfs",
+        "rev": "72c52d0ea145d43124be72c5f1367592320dc0ea",
+        "sha256": "047fr3ahpw8lnj1mjkrkhf1b2vw9687yks45bwrfqb0kaan0045k",
+        "type": "tarball",
+        "url": "https://github.com/fission-suite/go-ipfs/archive/72c52d0ea145d43124be72c5f1367592320dc0ea.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "ipfs-key": {
+        "branch": "master",
+        "description": "A program to generate ipfs private keys",
+        "homepage": null,
+        "owner": "fission-suite",
+        "repo": "ipfs-key",
+        "rev": "9171388a3ecfc41966e13a9a56745b3b2eda0463",
+        "sha256": "195h3n38b9cnq3r5fip2nwkqwnhws45s8rc17j92sa3snf8nxygc",
+        "type": "tarball",
+        "url": "https://github.com/fission-suite/ipfs-key/archive/9171388a3ecfc41966e13a9a56745b3b2eda0463.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "ipfs-migrator": {
+        "branch": "with-s3-v1",
+        "description": "Migrations for the filesystem repository of ipfs clients",
+        "homepage": "",
+        "owner": "fission-suite",
+        "repo": "fs-repo-migrations",
+        "rev": "8fe6cf6de0861027d36856c4d6e69a885c5aafc2",
+        "sha256": "0xz0i1rlglmv1dzx6fziapikwzcaqph1s3xbhswrhc672yyabjrd",
+        "type": "tarball",
+        "url": "https://github.com/fission-suite/fs-repo-migrations/archive/8fe6cf6de0861027d36856c4d6e69a885c5aafc2.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "niv": {
+        "branch": "master",
+        "description": "Easy dependency management for Nix projects",
+        "homepage": "https://github.com/nmattia/niv",
+        "owner": "nmattia",
+        "repo": "niv",
+        "rev": "9cb7ef336bb71fd1ca84fc7f2dff15ef4b033f2a",
+        "sha256": "1ajyqr8zka1zlb25jx1v4xys3zqmdy3prbm1vxlid6ah27a8qnzh",
+        "type": "tarball",
+        "url": "https://github.com/nmattia/niv/archive/9cb7ef336bb71fd1ca84fc7f2dff15ef4b033f2a.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nixpkgs": {
+        "branch": "nixpkgs-unstable",
+        "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
+        "homepage": "https://github.com/NixOS/nixpkgs",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "74b10859829153d5c5d50f7c77b86763759e8654",
+        "sha256": "0g9gak16a0mx6kwjzpz8fx4rwl9p1jj8f4f4frl12vjhnrssf6zp",
+        "type": "tarball",
+        "url": "https://github.com/NixOS/nixpkgs/archive/74b10859829153d5c5d50f7c77b86763759e8654.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    }
 }
